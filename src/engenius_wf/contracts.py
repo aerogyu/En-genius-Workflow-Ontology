@@ -3,7 +3,8 @@
 봉투: {contract, version, produced_by, case, iteration, data} — data 는 닫힌 객체, 항목마다 x-unit·x-qudt-unit.
 iteration 0 = 첫 바퀴 가정값(Loop.initial). 파일 확장자 검사는 대소문자를 가리지 않는다. 동결된 옛 판의 스키마도 계속 만들고,
 동결된 판(현재 판 포함)은 동결본의 정의로 만든다 (품은 계약도 동결본의 스냅샷으로).
-코드: C09 골격 예시가 자기 스키마를 통과 못함(경고) · J00 통과 · J01 JSON 읽기 실패 · J02 계약·판 스키마 없음 · J03 계약 위반.
+코드: C09 골격 예시가 자기 스키마를 통과 못함(경고) · J00 통과 · J01 JSON 읽기 실패(NaN·Infinity·같은 칸 두 번·맨 위가 객체 아님 포함) ·
+J02 계약·판 스키마 없음(폴더 이름은 대소문자까지 정확히) · J03 계약 위반.
 """
 
 from __future__ import annotations
@@ -140,22 +141,46 @@ def write_contracts(out: Path, m, ids, units, rel_all, rep: Report) -> int:
     return n_schema
 
 
+def _strict_pairs(pairs):
+    """JSON 객체 — 같은 칸이 두 번이면 거절 (json 기본값은 뒤 값이 조용히 이긴다)."""
+    d = {}
+    for k, v in pairs:
+        if k in d:
+            raise ValueError(f"같은 칸 '{k}' 가 두 번 나온다 (뒤 값이 조용히 이기므로 거절)")
+        d[k] = v
+    return d
+
+
+def _no_constant(name):
+    """NaN·Infinity 는 JSON 값이 아니다 (RFC 8259) — NaN 은 범위 검사도 통과해 버린다 (비교가 모두 거짓)."""
+    raise ValueError(f"{name} 는 JSON 값이 아니다 — 해석기 수렴 실패 값이면 데이터를 만들지 않는다")
+
+
 def validate_payloads(out: Path, paths, rep: Report):
+    cdir = Path(out) / "contracts"
+    if not cdir.is_dir():
+        rep.err("J02", str(out), "build 출력 폴더가 아니다 (contracts 폴더 없음)", "build 출력 폴더 output\\<시각>_<폴더>\\ 를 준다")
+        return
+    names = sorted(x.name for x in cdir.iterdir() if x.is_dir())     # 폴더 이름은 정확히 맞춘다 (Windows 는 대소문자를 가리지 않는다)
     for p in map(Path, paths):
         try:
-            data = json.loads(p.read_text(encoding="utf-8-sig"))
+            data = json.loads(p.read_text(encoding="utf-8-sig"), object_pairs_hook=_strict_pairs, parse_constant=_no_constant)
         except Exception as ex:  # noqa: BLE001
             rep.err("J01", p.name, f"JSON 읽기 실패 — {ex}")
             continue
+        if not isinstance(data, dict):
+            rep.err("J01", p.name, "맨 위가 { … } 객체가 아니다", '봉투: {"contract": 계약 key, "version": 판, "data": {…}}')
+            continue
         key, ver = data.get("contract"), data.get("version")
-        d = out / "contracts" / str(key)
-        if not d.exists():
-            rep.err("J02", p.name, f"계약 '{key}' 의 스키마가 없다", suggest(key, [x.name for x in (out / "contracts").iterdir()]))
+        if not isinstance(key, str) or key not in names:
+            rep.err("J02", p.name, f"계약 '{key}' 의 스키마가 없다", suggest(key, names))
+            continue
+        d = cdir / key
+        vers = sorted(x.name[: -len(".schema.json")] for x in d.glob("*.schema.json"))
+        if not isinstance(ver, str) or ver not in vers:
+            rep.err("J02", p.name, f"계약 '{key}' 판 '{ver}' 스키마가 없다 — 있는 판: {', '.join(vers)}")
             continue
         sp = d / f"{ver}.schema.json"
-        if not sp.exists():
-            rep.err("J02", p.name, f"계약 '{key}' 판 '{ver}' 스키마가 없다 — 있는 판: {', '.join(x.name.split('.schema')[0] for x in d.glob('*.schema.json'))}")
-            continue
         sch = json.loads(sp.read_text(encoding="utf-8"))
         errs = sorted(jsonschema.Draft202012Validator(sch).iter_errors(data), key=lambda e: list(e.absolute_path))
         for e in errs:
@@ -176,6 +201,8 @@ def validate_payloads(out: Path, paths, rep: Report):
                 rep.err("J03", p.name, f"{path}: 파일 확장자가 계약과 다르다 '{e.instance}'")
             elif e.validator == "type":
                 rep.err("J03", p.name, f"{path}: 형이 틀림 '{e.instance}' ({e.validator_value} 이어야)")
+            elif e.validator == "const":
+                rep.err("J03", p.name, f"{path}: 값 '{e.instance}' 이 이 스키마와 다르다 (스키마: '{e.validator_value}')")
             else:
                 rep.err("J03", p.name, f"{path}: {e.message}")
         if not errs:

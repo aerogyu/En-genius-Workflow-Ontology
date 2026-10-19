@@ -1,4 +1,4 @@
-"""검사 2·3층 — 모양(S)·참조(R)·단위·항목(U/C)·인명(P).
+"""검사 2·3층 — 모양(S)·참조(R)·단위·항목(U/C — C10 형에 뜻이 없는 칸, C11 대소문자만 다른 항목·묶음 이름)·인명(P).
 
 4층 검사 = ① 읽기(loader, Y) → ② 모양(여기 check_shape, S) → ③ 의미(여기 R·U·C·P + flow 의 D·F·L + versioning 의 V +
 tools 의 T·X + registry 의 G) → ④ 산출(contracts 의 C09). 모양이 틀리면 그 자리에서 멈춘다 (연쇄 헛 오류 방지 — pipeline.run).
@@ -170,13 +170,17 @@ def check_items(m, units, aliases, rep: Report):
     alias_used = defaultdict(int)
 
     def one_list(owner, scope, items, records):
-        seen = set()
+        seen, low = set(), {}
         for it in items:
             w = (owner["_file"], it.line)
             nm = it["name"]
             if nm in seen:
                 rep.err("C01", w, f"{scope}: 항목 '{nm}' 이 두 번")
+            elif nm.lower() in low:
+                rep.err("C11", w, f"{scope}: 항목 '{nm}' 와 '{low[nm.lower()]}' 는 대소문자만 다르다",
+                        "JSON 키는 대소문자를 가린다 — 같은 양이면 하나로 합치고, 다른 양이면 이름을 분명히 (예 Pt · p_static)")
             seen.add(nm)
+            low.setdefault(nm.lower(), nm)
             t, u = it.get("type", "number"), it.get("unit")
             if u is not None:
                 if u in aliases:
@@ -208,13 +212,25 @@ def check_items(m, units, aliases, rep: Report):
                 rep.err("C04", w, f"{scope}.{nm}: minimum > maximum")
             if it.get("min_items") is not None and not it.get("list"):
                 rep.warn("C07", w, f"{scope}.{nm}: 목록이 아닌데 min_items")
+            # 그 형에서 뜻이 없는 칸 — 적으면 제약이 걸렸다고 믿게 되지만 스키마는 검사하지 않는다 (판 비교에서도 헛 올림)
+            if t not in NUMERIC and (it.get("minimum") is not None or it.get("maximum") is not None):
+                rep.err("C10", w, f"{scope}.{nm}: minimum·maximum 은 숫자 항목(number·integer)에만 — 이 항목은 {t}",
+                        "글자 길이 같은 제한이면 description 메모로, 목록 개수는 min_items")
+            if t != "enum" and it.get("values"):
+                rep.err("C10", w, f"{scope}.{nm}: values 는 enum 항목에만 — 이 항목은 {t}", "선택지면 type: enum (한 줄: enum:A/B/C)")
+            if t != "file" and it.get("formats"):
+                rep.err("C10", w, f"{scope}.{nm}: formats 는 file 항목에만 — 이 항목은 {t}", "파일이면 type: file (한 줄: file:csv)")
 
     for k, i in m["interface"].items():
-        recs = {}
+        recs, rlow = {}, {}
         for r in i.get("records", []):
             if r["name"] in recs:
                 rep.err("C01", (i["_file"], r.line), f"{k}: 묶음 '{r['name']}' 이 두 번")
+            elif r["name"].lower() in rlow:
+                rep.err("C11", (i["_file"], r.line), f"{k}: 묶음 '{r['name']}' 와 '{rlow[r['name'].lower()]}' 는 대소문자만 다르다",
+                        "묶음 이름 하나로 합치거나 이름을 분명히")
             recs[r["name"]] = r
+            rlow.setdefault(r["name"].lower(), r["name"])
         i["_records"] = recs
         one_list(i, k, i["items"], recs)
         for rn, r in recs.items():
