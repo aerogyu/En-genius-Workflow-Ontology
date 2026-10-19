@@ -27,3 +27,8 @@ dist/
 # 반입 패키지 조립 폴더·zip (offline/wheels 는 위에 있음)
 offline/package*/
 offline/*.zip
+
+# 사내 PC 에서 생기는 기록 (scripts\selftest.bat 결과·설치 판 표식)
+offline/selftest_*.txt
+offline/selftest_*.log
+offline/installed_commit.txt
