@@ -1,7 +1,7 @@
 """흐름 그림 HTML — 외부 JS 0 (폐쇄망), 인라인 SVG, 다크 모드.
 
 레인 = 분야, 열 = 위상 층. 데이터 선후는 실선, 순서만은 점선, 수기 전달은 굵은 주황 ✋, 루프는 보라 ↺ (툴팁: 몸통·나르는
-계약·수렴 메모·첫 바퀴), 수렴 뒤 단계는 배지. 아래에 루프 표와 계약 표.
+계약·수렴 메모·첫 바퀴), 수렴 뒤 단계(어느 루프 몸통에도 들지 않는 것만)는 배지. 아래에 루프 표와 계약 표.
 """
 
 from __future__ import annotations
@@ -89,7 +89,9 @@ def write_html(m, flow, rules, path: Path):
                    f"수렴: {lp['until']}\n첫 바퀴: {lp.get('initial', '(없음)')}\n수렴 뒤 단계: {', '.join(info['after_convergence']) or '없음'}")
             svg.append(f'<path d="M{x1},{y1} C{x1},{ty} {x2},{ty} {x2},{y2}" class="lp" marker-end="url(#b)"><title>{e(tip)}</title></path>'
                        f'<text x="{(x1 + x2) / 2}" y="{ty + 2}" class="ll" text-anchor="middle">↺ {e(lp["label"])}</text>')
-    after_conv = {s for info in flow["loops"].values() for s in info["after_convergence"]}
+    # 단계 배지 '수렴 뒤' = 어느 루프의 수렴 뒤 단계이면서 어느 루프 몸통에도 들지 않는 단계 (다른 루프 몸통 단계는 그 반복마다 돈다)
+    in_body = {s for info in flow["loops"].values() for s in info["members"]}
+    after_conv = {s for info in flow["loops"].values() for s in info["after_convergence"]} - in_body
     for k in top:
         x, yy = pos[k]
         kids = flow["children"].get(k, [])
@@ -129,7 +131,8 @@ table{border-collapse:collapse;margin:6px 0 12px}td,th{border:1px solid var(--la
         f"<!doctype html><html lang=ko><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
         f"<title>워크플로 그림</title><style>{css}</style><h1>{e(next(iter(m['plan'].values()))['label'])}</h1>"
         f"<p>실선 = 데이터로 이어진 선후 (선에 마우스: 계약), 점선 = 순서만, <b style='color:var(--man)'>굵은 주황 ✋</b> = 수기 전달(Tool Agent 후보), "
-        f"<b style='color:var(--lp)'>보라 ↺</b> = 반복 루프. 같은 열에 선후 없이 놓인 단계는 병렬. '수렴 뒤' = 루프가 끝난 뒤에 도는 단계.</p>"
+        f"<b style='color:var(--lp)'>보라 ↺</b> = 반복 루프. 같은 열에 선후 없이 놓인 단계는 병렬. "
+        f"'수렴 뒤' 배지 = 어느 루프 몸통에도 들지 않고 루프가 끝난 뒤에 한 번 도는 단계.</p>"
         f"<div class=wrap>{''.join(svg)}</div><h2>반복 루프</h2><div class=tw><table><tr><th>루프</th><th>몸통</th><th>나르는 데이터</th>"
-        f"<th>수렴 뒤 단계</th><th>수렴 조건</th><th>첫 바퀴</th></tr>{lrows}</table></div><h2>데이터 계약</h2>{''.join(rows)}</html>",
+        f"<th>수렴 뒤 단계 (이 루프 기준)</th><th>수렴 조건</th><th>첫 바퀴</th></tr>{lrows}</table></div><h2>데이터 계약</h2>{''.join(rows)}</html>",
         encoding="utf-8", newline="\n")

@@ -3,8 +3,10 @@
 - 선후는 데이터에서 계산한다: "B 의 입력 = A 의 출력" 이면 A→B (하위 단계는 같은 묶음 수준으로 올려서 잇는다 — lift).
   순서만 있는 선후는 after. 루프로 되돌아가는 간선(Loop.back_from → back_to)은 선후에 넣지 않는다 → 늘 DAG.
   표시 없는 순환은 오타로 보고 F01 + 'loops 에 back_from·back_to (추정)' 안내.
-- 루프 몸통 = back_to 에서 앞으로 가서 back_from 에 닿는 길 위의 단계 + include. 나르는 계약 = 되돌아가는 간선의 데이터.
-  수렴 뒤 단계(afterConvergence) = back_to 의 하류인데 몸통 밖 (루프 안에서 바뀌는 데이터를 받아 수렴 뒤 1회).
+- 루프 몸통 = back_to 에서 앞으로 가서 back_from 에 닿는 길 위의 단계 + include ('길' 에는 안쪽 루프의 되돌림 간선도 든다).
+  나르는 계약 = 되돌아가는 간선의 데이터. 같은 back_to 로 되돌아가는 루프 여럿은 한 반복으로 본다.
+  수렴 뒤 단계(afterConvergence) = back_to 의 하류인데 그 반복(같은 back_to 루프 몸통의 합집합) 밖 (루프 안에서 바뀌는 데이터를 받아 수렴 뒤 1회).
+  엇갈림(L04) = back_to 가 다른 두 루프의 몸통이 일부만 겹침 — 경고만, 몸통·수렴 뒤는 루프마다 따로 계산.
 - 입력 종류: 앞 단계 / 루프 / 외부 / 생산자 없음. 계약의 '실제 생산자' 는 가장 깊은 단계 하나 (상위 단계 선언은 경계 표시).
 """
 
@@ -139,36 +141,61 @@ def analyse_flow(m, rules, rep: Report):
     if cycles:
         return None
 
-    def reach(a):
+    def reach(a, extra=None):
+        """a 에서 앞으로 닿는 단계 (a 포함). extra = 길로 더 볼 간선 {from: {to}} (안쪽 루프의 되돌림 간선)."""
         seen, todo = {a}, [a]
         while todo:
             x = todo.pop()
-            for y in forward[x]:
+            for y in forward[x] | (extra.get(x, set()) if extra else set()):
                 if y not in seen:
                     seen.add(y)
                     todo.append(y)
         return seen
-    loops = {}
+    # 루프 몸통 = 처음(back_to)의 하류 중 끝(back_from)에 닿는 단계 + include. '닿는다' 에는 안쪽 루프(처음이 다르고 두 끝이 모두
+    # 이 루프 처음의 하류)의 되돌림 간선도 길로 본다 — 안쪽 루프의 곁가지(예 터빈 1D → 냉각 유량 → 되돌림)도 바깥 반복마다 다시 돈다.
+    # 선후(forward·isPrecededBy)와 F01 순환 검사는 지금처럼 되돌림 간선을 전부 뺀 그래프 그대로다 (늘 DAG).
+    loops, reach_of = {}, {}
     for (f, t), lk in back.items():
         lp = m["loop"][lk]
         rt = reach(t)
         if f not in rt:
             rep.err("L01", ln(lp, "back_to"), f"루프 처음 '{t}' 에서 앞으로 가서 끝 '{f}' 에 닿는 길이 없다", "back_from/back_to 가 바뀌었나?")
             continue
-        members = {x for x in rt if f in reach(x)}
+        inner = defaultdict(set)
+        for (f2, t2) in back:
+            if t2 != t and t2 in rt and f2 in rt:
+                inner[f2].add(t2)
+        members = {x for x in rt if f in reach(x, inner)}
         for x in lp.get("include", []):
             if x not in rt:
                 rep.err("L09", ln(lp, "include"), f"include '{x}' 는 루프 처음 '{t}' 의 하류가 아니다 — 매 반복 다시 돌 이유가 없다")
             members.add(x)
-        downstream = sorted(rt - members)
-        carries = sorted(data_edges.get((f, t), set()))
-        loops[lk] = {"members": sorted(members), "carries": carries, "after_convergence": downstream}
+        reach_of[lk] = rt
+        loops[lk] = {"members": sorted(members), "carries": sorted(data_edges.get((f, t), set()))}
+    # 같은 처음(back_to)으로 되돌아가는 루프 여럿은 한 반복이다 (예: 압축기·터빈·이차유로 결과가 각각 사이클 해석으로 되돌아옴).
+    # 수렴 뒤 단계 = 처음의 하류 중 그 반복(같은 처음 루프 몸통의 합집합) 밖 — 형제 분기 단계를 '수렴 뒤' 로 세지 않는다.
+    group = defaultdict(list)
+    for (f, t), lk in back.items():
+        if lk in loops:
+            group[t].append(lk)
+    same_head = {}
+    for t, lks in group.items():
+        union = set().union(*(loops[lk]["members"] for lk in lks))
+        for lk in lks:
+            loops[lk]["after_convergence"] = sorted(reach_of[lk] - union)
+            same_head[lk] = (sorted(x for x in lks if x != lk), union)
+    for (f, t), lk in back.items():
+        if lk not in loops:
+            continue
+        lp, info = m["loop"][lk], loops[lk]
+        carries, downstream = info["carries"], info["after_convergence"]
+        others, union = same_head[lk]
         if not carries:
             rep.warn("L03", ln(lp, "back_to"), "되돌아가는 간선이 나르는 데이터가 없다 (순서만 되돌아감)", f"'{t}' 의 inputs 확인")
         if not lp.get("initial"):
             rep.warn("L07", ln(lp, "key"), "첫 바퀴 값의 출처(initial)가 없다 — 되돌아오는 데이터는 첫 반복에 없다",
                      "예: initial: 첫 바퀴는 설계점 값 (차이 0 가정)")
-        prod_in_loop = {b["interface"] for s in members for b in steps[s].get("outputs", [])}
+        prod_in_loop = {b["interface"] for s in union for b in steps[s].get("outputs", [])}     # 같은 반복 안에서 바뀌는 계약
         for mo in lp.get("monitor", []):
             ik, item = mo.split(".", 1)
             if ik not in m["interface"]:
@@ -178,13 +205,19 @@ def analyse_flow(m, rules, rep: Report):
                         suggest(item, [it["name"] for it in m["interface"][ik]["items"]]))
             elif ik not in prod_in_loop:
                 rep.warn("L06", ln(lp, "monitor"), f"monitor '{mo}': 루프 몸통이 만드는 계약이 아니다 (반복 중 바뀌지 않음)")
-        rep.info("L08", ln(lp, "key"), f"루프 '{lk}': 몸통 {loops[lk]['members']} · 나르는 데이터 {carries} · 수렴 뒤 단계 {downstream or '없음'}")
-    ls = list(loops.items())
+        same = f" · 같은 처음 '{t}' 로 되돌아가는 루프 {others} 와 한 반복 (수렴 뒤 단계는 합쳐서 계산)" if others else ""
+        rep.info("L08", ln(lp, "key"), f"루프 '{lk}': 몸통 {info['members']} · 나르는 데이터 {carries} · 수렴 뒤 단계 {downstream or '없음'}{same}")
+    # 엇갈림: 처음이 다른 두 루프가 몸통 일부만 겹친다 (같은 처음 루프끼리는 한 반복이라 해당 없음)
+    ls = [(lk, m["loop"][lk]["back_to"]) for lk in loops]
     for i in range(len(ls)):
         for j in range(i + 1, len(ls)):
-            a, b = set(ls[i][1]["members"]), set(ls[j][1]["members"])
-            if a & b and not (a <= b or b <= a):
-                rep.warn("L04", ln(m["loop"][ls[i][0]], "key"), f"루프 '{ls[i][0]}' 와 '{ls[j][0]}' 가 엇갈려 겹친다 (안에 품거나 떨어져야 명확)")
+            (la, ta), (lb, tb) = ls[i], ls[j]
+            a, b = set(loops[la]["members"]), set(loops[lb]["members"])
+            if ta != tb and a & b and not (a <= b or b <= a):
+                rep.warn("L04", ln(m["loop"][la], "key"),
+                         f"루프 '{la}'(처음 {ta}) 와 '{lb}'(처음 {tb}) 가 엇갈려 겹친다 — 겹치는 단계 {sorted(a & b)} 만 같다",
+                         "한 루프가 다른 루프를 통째로 품으면(중첩) 해석이 분명하다 — 바깥 루프 include 에 안쪽 몸통 단계를 더하거나"
+                         " (바깥 루프 처음의 하류일 때만, L09) back_to 를 고친다. 따로 도는 반복이면 그대로 둬도 된다 (몸통·수렴 뒤는 루프마다 따로 계산)")
     # 상위 단계 경계
     for p, kids in children.items():
         if p is None:

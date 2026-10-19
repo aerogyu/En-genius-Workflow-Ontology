@@ -1,0 +1,12 @@
+# 형제 루프 (가상) — 사이클 루프 하류의 다른 가지에 머리가 다른 루프 (수리안이 형제 루프를 잘못 품지 않는지)
+plan:
+  key: mini-sibling
+  label: 형제 루프
+  phase: 개념설계
+  version: 0.1
+
+disciplines:
+  - {key: x, label: 가상 분야}
+
+tools:
+  - {key: excel, label: Excel}

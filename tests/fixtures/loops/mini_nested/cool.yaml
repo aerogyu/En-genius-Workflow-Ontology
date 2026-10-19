@@ -1,0 +1,22 @@
+discipline: cool
+steps:
+  - key: cool-flow
+    label: 터빈 냉각 유량 산정
+    tools: excel
+    inputs:
+      - {interface: if-trb-1d, transfer: 수기}
+      - {interface: if-cycle-dp, transfer: 수기}
+    outputs: if-cool-flows
+interfaces:
+  - key: if-cool-flows
+    label: 냉각 유량
+    version: 0.1.0
+    items:
+      W_cool: kg/s | 냉각 유량
+loops:
+  - key: loop-cool
+    label: 냉각–터빈 내부 루프
+    back_from: cool-flow
+    back_to: trb-meanline
+    until: 냉각 유량 변화 1 % 이내 (메모)
+    initial: 첫 바퀴는 냉각 유량 0 가정

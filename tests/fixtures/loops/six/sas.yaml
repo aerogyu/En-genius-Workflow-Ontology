@@ -1,0 +1,22 @@
+discipline: sas
+steps:
+  - key: sas-network
+    label: 이차유로 망 해석
+    tools: excel
+    inputs:
+      - {interface: if-cool-flows, transfer: 수기}
+      - {interface: if-cycle-dp, transfer: 수기}
+    outputs: if-sas-flows
+interfaces:
+  - key: if-sas-flows
+    label: 이차유로 누설·냉각 유량
+    version: 0.1.0
+    items:
+      W_leak: kg/s | 누설 유량
+loops:
+  - key: loop-sas
+    label: 이차유로–사이클 루프
+    back_from: sas-network
+    back_to: perf-cycle
+    until: 누설 유량 반영 사이클 재정합 (메모)
+    initial: 첫 바퀴는 누설 0 가정

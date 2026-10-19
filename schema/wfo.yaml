@@ -399,8 +399,9 @@ classes:
     class_uri: wf:Loop
     description: >-
       반복 루프 — 되돌아가는 간선(back_from → back_to)을 객체로 만든 것. 몸통 단계는 빌드가 계산
-      (back_to 에서 앞으로 가서 back_from 에 닿는 경로 위의 단계 + include). 몸통 밖인데 루프 안에서 바뀌는
-      데이터를 받는 단계는 '수렴 뒤 단계'(after_convergence)로 계산해 보여 준다. 수렴 조건·첫 바퀴 값은 메모 (판정은 엔지니어).
+      (back_to 에서 앞으로 가서 back_from 에 닿는 경로 위의 단계 + include — 경로에는 안쪽 루프의 되돌림 간선도 든다).
+      같은 back_to 로 되돌아가는 루프 여럿은 한 반복으로 본다. 그 반복 밖인데 루프 안에서 바뀌는 데이터를 받는 단계는
+      '수렴 뒤 단계'(after_convergence)로 계산해 보여 준다. 수렴 조건·첫 바퀴 값은 메모 (판정은 엔지니어).
     slots: [key, label, note, renamed_from]
     attributes:
       back_from:
@@ -449,7 +450,9 @@ classes:
         slot_uri: wf:afterConvergence
         range: Step
         multivalued: true
-        description: (빌드) 루프 하류 — 루프 안에서 바뀌는 데이터를 받지만 몸통 밖이라 수렴 뒤에 도는 단계.
+        description: >-
+          (빌드) 루프 하류 — back_to 의 하류인데 같은 back_to 루프들 몸통(합집합) 밖이라 수렴 뒤에 도는 단계
+          (이 루프 기준 — 다른 루프의 몸통 단계일 수 있다).
 
   # ======================= 빌드가 만드는 것 =======================
   SubPlan:

@@ -1,0 +1,12 @@
+# 진짜 엇갈린 루프 (가상) — 머리가 다른 두 루프가 합류 단계 z 를 공유, 어느 쪽도 다른 쪽을 품지 않음
+plan:
+  key: mini-cross
+  label: 엇갈린 루프
+  phase: 개념설계
+  version: 0.1
+
+disciplines:
+  - {key: x, label: 가상 분야}
+
+tools:
+  - {key: excel, label: Excel}

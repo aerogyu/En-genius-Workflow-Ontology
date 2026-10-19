@@ -1,0 +1,21 @@
+discipline: perf
+steps:
+  - key: perf-cycle
+    label: 사이클 해석
+    tools: gasturb
+    inputs:
+      - if-engine-reqs
+      - {interface: if-trb-map, transfer: 파일}
+    outputs: if-cycle-dp
+interfaces:
+  - key: if-engine-reqs
+    label: 엔진 요구 조건
+    version: 0.1.0
+    external: true
+    items:
+      Fn: kN | 추력
+  - key: if-cycle-dp
+    label: 사이클 결과
+    version: 0.1.0
+    items:
+      Tt4: K | 터빈 입구 전온도

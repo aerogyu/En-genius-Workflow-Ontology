@@ -1,0 +1,76 @@
+discipline: x
+steps:
+  - key: perf-cycle
+    label: 사이클 해석
+    tools: excel
+    inputs:
+      - if-engine-reqs
+      - {interface: if-trb-map, transfer: 수기}
+    outputs: if-cycle-dp
+  - key: trb-meanline
+    label: 터빈 1D
+    tools: excel
+    inputs: {interface: if-cycle-dp, transfer: 수기}
+    outputs: if-trb-1d
+  - key: trb-map
+    label: 터빈 맵
+    tools: excel
+    inputs: {interface: if-trb-1d, transfer: 수기}
+    outputs: if-trb-map
+  - key: cool-flow
+    label: 냉각 유량
+    tools: excel
+    inputs:
+      - {interface: if-cycle-dp, transfer: 수기}
+      - {interface: if-sas-flows, transfer: 수기}
+    outputs: if-cool-flows
+  - key: sas-network
+    label: 이차유로 망
+    tools: excel
+    inputs: {interface: if-cool-flows, transfer: 수기}
+    outputs: if-sas-flows
+interfaces:
+  - key: if-engine-reqs
+    label: 엔진 요구 조건
+    version: 0.1.0
+    external: true
+    items:
+      Fn: kN | 추력
+  - key: if-cycle-dp
+    label: 사이클 결과
+    version: 0.1.0
+    items:
+      Tt4: K | 터빈 입구 전온도
+  - key: if-trb-1d
+    label: 터빈 1D 결과
+    version: 0.1.0
+    items:
+      eta_t: 1 | 효율
+  - key: if-trb-map
+    label: 터빈 맵
+    version: 0.1.0
+    items:
+      W45R: kg/s | 수정 유량
+  - key: if-cool-flows
+    label: 냉각 유량
+    version: 0.1.0
+    items:
+      W_cool: kg/s | 냉각 유량
+  - key: if-sas-flows
+    label: 이차유로 유량
+    version: 0.1.0
+    items:
+      W_leak: kg/s | 누설 유량
+loops:
+  - key: loop-trb
+    label: 터빈–사이클
+    back_from: trb-map
+    back_to: perf-cycle
+    until: 메모
+    initial: 첫 바퀴 가정값
+  - key: loop-sas
+    label: 이차유로–냉각 (형제 가지)
+    back_from: sas-network
+    back_to: cool-flow
+    until: 메모
+    initial: 첫 바퀴 가정값

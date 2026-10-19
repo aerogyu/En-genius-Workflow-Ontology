@@ -1,0 +1,14 @@
+discipline: comb
+steps:
+  - key: comb-sizing
+    label: 연소기 크기 산정
+    tools: excel
+    inputs: {interface: if-cycle-dp, transfer: 수기}
+    outputs: if-comb-size
+interfaces:
+  - key: if-comb-size
+    label: 연소기 크기
+    version: 0.1.0
+    deliverable: true
+    items:
+      L_comb: mm | 연소기 길이

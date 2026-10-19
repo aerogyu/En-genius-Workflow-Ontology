@@ -1,0 +1,84 @@
+discipline: x
+steps:
+  - key: a-step
+    label: A
+    tools: excel
+    inputs:
+      - if-ext-a
+      - {interface: if-c-out, transfer: 수기}
+    outputs: if-a
+  - key: b-step
+    label: B
+    tools: excel
+    inputs:
+      - if-ext-b
+      - {interface: if-d-out, transfer: 수기}
+    outputs: if-b
+  - key: z-step
+    label: Z (합류)
+    tools: excel
+    inputs:
+      - {interface: if-a, transfer: 수기}
+      - {interface: if-b, transfer: 수기}
+    outputs: if-z
+  - key: c-step
+    label: C
+    tools: excel
+    inputs: {interface: if-z, transfer: 수기}
+    outputs: if-c-out
+  - key: d-step
+    label: D
+    tools: excel
+    inputs: {interface: if-z, transfer: 수기}
+    outputs: if-d-out
+interfaces:
+  - key: if-ext-a
+    label: 외부 A
+    version: 0.1.0
+    external: true
+    items:
+      p: 1 | 값
+  - key: if-ext-b
+    label: 외부 B
+    version: 0.1.0
+    external: true
+    items:
+      q: 1 | 값
+  - key: if-a
+    label: A 결과
+    version: 0.1.0
+    items:
+      a: 1 | 값
+  - key: if-b
+    label: B 결과
+    version: 0.1.0
+    items:
+      b: 1 | 값
+  - key: if-z
+    label: Z 결과
+    version: 0.1.0
+    items:
+      z: 1 | 값
+  - key: if-c-out
+    label: C 결과
+    version: 0.1.0
+    items:
+      c: 1 | 값
+  - key: if-d-out
+    label: D 결과
+    version: 0.1.0
+    items:
+      d: 1 | 값
+loops:
+  - key: loop-ca
+    label: C 에서 A 로
+    back_from: c-step
+    back_to: a-step
+    until: 메모
+    initial: 첫 바퀴 가정값
+  - key: loop-db
+    label: D 에서 B 로
+    back_from: d-step
+    back_to: b-step
+    until: 메모
+    initial: 첫 바퀴 가정값

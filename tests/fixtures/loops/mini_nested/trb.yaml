@@ -1,0 +1,32 @@
+discipline: trb
+steps:
+  - key: trb-meanline
+    label: 터빈 1D 설계
+    tools: excel
+    inputs:
+      - {interface: if-cycle-dp, transfer: 수기}
+      - {interface: if-cool-flows, transfer: 수기}   # 냉각 유량 — 냉각↔터빈 내부 루프로 되돌아옴
+    outputs: if-trb-1d
+  - key: trb-map
+    label: 터빈 맵 생성
+    tools: excel
+    inputs: if-trb-1d
+    outputs: if-trb-map
+interfaces:
+  - key: if-trb-1d
+    label: 터빈 1D 결과
+    version: 0.1.0
+    items:
+      eta_t: 1 | 효율
+  - key: if-trb-map
+    label: 터빈 맵
+    version: 0.1.0
+    items:
+      W45R: kg/s | 수정 유량
+loops:
+  - key: loop-trb
+    label: 터빈–사이클 매칭
+    back_from: trb-map
+    back_to: perf-cycle
+    until: 터빈 맵 반영 사이클 재정합 (메모)
+    initial: 첫 바퀴는 설계점 효율 가정값

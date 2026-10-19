@@ -1,0 +1,15 @@
+# 최소 중첩 루프 (가상) — 사이클 루프 안에 터빈–냉각 안쪽 루프
+plan:
+  key: mini-nested
+  label: 최소 중첩 루프
+  phase: 개념설계
+  version: 0.1
+
+disciplines:
+  - {key: perf, label: 성능}
+  - {key: trb,  label: 터빈}
+  - {key: cool, label: 냉각}
+
+tools:
+  - {key: gasturb, label: GasTurb}
+  - {key: excel,   label: Excel}

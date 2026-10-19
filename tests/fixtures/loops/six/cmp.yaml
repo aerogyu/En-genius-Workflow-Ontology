@@ -1,0 +1,30 @@
+discipline: cmp
+steps:
+  - key: cmp-meanline
+    label: 압축기 1D 설계
+    tools: excel
+    inputs: {interface: if-cycle-dp, transfer: 수기}
+    outputs: if-cmp-1d
+  - key: cmp-map
+    label: 압축기 맵 생성
+    tools: excel
+    inputs: if-cmp-1d
+    outputs: if-cmp-map
+interfaces:
+  - key: if-cmp-1d
+    label: 압축기 1D 결과
+    version: 0.1.0
+    items:
+      PR_c: 1 | 압력비
+  - key: if-cmp-map
+    label: 압축기 맵
+    version: 0.1.0
+    items:
+      surge_margin: 퍼센트 | 서지 마진
+loops:
+  - key: loop-cmp
+    label: 압축기–사이클 매칭
+    back_from: cmp-map
+    back_to: perf-cycle
+    until: 압축기 맵 반영 사이클 재정합 (메모)
+    initial: 첫 바퀴는 설계점 효율 가정값

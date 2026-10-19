@@ -59,7 +59,7 @@ wf:InterfaceRelease a sh:NodeShape ;
     sh:targetClass wf:InterfaceRelease .
 
 wf:Loop a sh:NodeShape ;
-    rdfs:comment "반복 루프 — 되돌아가는 간선(back_from → back_to)을 객체로 만든 것. 몸통 단계는 빌드가 계산 (back_to 에서 앞으로 가서 back_from 에 닿는 경로 위의 단계 + include). 몸통 밖인데 루프 안에서 바뀌는 데이터를 받는 단계는 '수렴 뒤 단계'(after_convergence)로 계산해 보여 준다. 수렴 조건·첫 바퀴 값은 메모 (판정은 엔지니어)." ;
+    rdfs:comment "반복 루프 — 되돌아가는 간선(back_from → back_to)을 객체로 만든 것. 몸통 단계는 빌드가 계산 (back_to 에서 앞으로 가서 back_from 에 닿는 경로 위의 단계 + include — 경로에는 안쪽 루프의 되돌림 간선도 든다). 같은 back_to 로 되돌아가는 루프 여럿은 한 반복으로 본다. 그 반복 밖인데 루프 안에서 바뀌는 데이터를 받는 단계는 '수렴 뒤 단계'(after_convergence)로 계산해 보여 준다. 수렴 조건·첫 바퀴 값은 메모 (판정은 엔지니어)." ;
     sh:closed true ;
     sh:ignoredProperties ( rdf:type ) ;
     sh:property [ sh:datatype xsd:string ;
@@ -111,6 +111,11 @@ wf:Loop a sh:NodeShape ;
             sh:nodeKind sh:IRI ;
             sh:order 11 ;
             sh:path wf:loopMember ],
+        [ sh:class wf:Step ;
+            sh:description "(빌드) 루프 하류 — back_to 의 하류인데 같은 back_to 루프들 몸통(합집합) 밖이라 수렴 뒤에 도는 단계 (이 루프 기준 — 다른 루프의 몸통 단계일 수 있다)." ;
+            sh:nodeKind sh:IRI ;
+            sh:order 13 ;
+            sh:path wf:afterConvergence ],
         [ sh:datatype xsd:string ;
             sh:description "사람이 읽는 참조 키 (영문 소문자·숫자·하이픈). YAML 안 참조에만 쓰고 RDF IRI 는 레지스트리가 준다." ;
             sh:maxCount 1 ;
@@ -118,11 +123,6 @@ wf:Loop a sh:NodeShape ;
             sh:order 0 ;
             sh:path skos:notation ;
             sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ],
-        [ sh:class wf:Step ;
-            sh:description "(빌드) 루프 하류 — 루프 안에서 바뀌는 데이터를 받지만 몸통 밖이라 수렴 뒤에 도는 단계." ;
-            sh:nodeKind sh:IRI ;
-            sh:order 13 ;
-            sh:path wf:afterConvergence ],
         [ sh:class wf:Step ;
             sh:description "루프 처음 — 여기로 되돌아온다." ;
             sh:maxCount 1 ;

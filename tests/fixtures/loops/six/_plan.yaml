@@ -1,0 +1,18 @@
+# 6분야 규모 흉내 (공개 교과서 수준, 가상) — 사이클 ↔ 압축기·터빈·냉각·이차유로 다중 루프
+plan:
+  key: concept-design
+  label: 개념설계 워크플로 (6분야 흉내)
+  phase: 개념설계
+  version: 0.1
+
+disciplines:
+  - {key: perf, label: 성능}
+  - {key: cmp,  label: 압축기}
+  - {key: comb, label: 연소기}
+  - {key: trb,  label: 터빈}
+  - {key: cool, label: 냉각}
+  - {key: sas,  label: 이차유로}
+
+tools:
+  - {key: gasturb, label: GasTurb}
+  - {key: excel,   label: Excel}
