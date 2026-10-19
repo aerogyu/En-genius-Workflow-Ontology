@@ -1,7 +1,8 @@
 """흐름 그림 HTML — 외부 JS 0 (폐쇄망), 인라인 SVG, 다크 모드.
 
 레인 = 분야, 열 = 위상 층. 데이터 선후는 실선, 순서만은 점선, 수기 전달은 굵은 주황 ✋, 루프는 보라 ↺ (툴팁: 몸통·나르는
-계약·수렴 메모·첫 바퀴), 수렴 뒤 단계(어느 루프 몸통에도 들지 않는 것만)는 배지. 아래에 루프 표와 계약 표.
+계약·수렴 메모·첫 바퀴), 수렴 뒤 단계(어느 루프 몸통에도 들지 않는 것만)는 배지. 상위 단계 상자는 하위 단계 개수와 툴만 —
+마우스를 올리면 하위 단계(이름·툴·받는 데이터·전달 방법) 목록. 아래에 하위 단계 표·루프 표·계약 표.
 """
 
 from __future__ import annotations
@@ -92,20 +93,46 @@ def write_html(m, flow, rules, path: Path):
     # 단계 배지 '수렴 뒤' = 어느 루프의 수렴 뒤 단계이면서 어느 루프 몸통에도 들지 않는 단계 (다른 루프 몸통 단계는 그 반복마다 돈다)
     in_body = {s for info in flow["loops"].values() for s in info["members"]}
     after_conv = {s for info in flow["loops"].values() for s in info["after_convergence"]} - in_body
+    def tool_names(k):
+        return ", ".join(m["tool"][t]["label"] for t in steps[k].get("tools", []) if t in m["tool"])
+
+    def in_text(b):
+        tr = b.get("transfer")
+        return f"{'✋ ' if tr in manual else ''}{b['interface']} ({b.get('_kind', '')}{', ' + tr if tr else ''})"
+
+    def io_lines(k, pad):
+        ins = "\n".join(f"{pad}← {in_text(b)}" for b in steps[k].get("inputs", []))
+        outs = "\n".join(f"{pad}→ {b['interface']}" for b in steps[k].get("outputs", []))
+        return ins, outs
+
     for k in top:
         x, yy = pos[k]
         kids = flow["children"].get(k, [])
-        tools = ", ".join(m["tool"][t]["label"] for t in steps[k].get("tools", []) if t in m["tool"]) or \
-            ", ".join(sorted({m["tool"][t]["label"] for c in kids for t in steps[c].get("tools", []) if t in m["tool"]}))
-        sub = f'<text x="{x + 8}" y="{yy + 53}" class="sub">{e(fit("▸ 하위 " + str(len(kids)) + ": " + ", ".join(steps[c]["label"] for c in kids), W - 60, 11))}</text>' if kids else ""
+        tools = tool_names(k) or ", ".join(sorted({m["tool"][t]["label"] for c in kids for t in steps[c].get("tools", []) if t in m["tool"]}))
+        sub = f'<text x="{x + 8}" y="{yy + 53}" class="sub">{e(fit("▸ 하위 단계 " + str(len(kids)) + "개 (아래 표)", W - 60, 11))}</text>' if kids else ""
         badge = f'<text x="{x + W - 8}" y="{yy + H - 7}" class="bd" text-anchor="end">수렴 뒤</text>' if k in after_conv else ""
-        ins = "\n".join(f"  ← {b['interface']} ({b.get('_kind', '')}{', ' + b['transfer'] if b.get('transfer') else ''})" for b in steps[k].get("inputs", []))
-        outs = "\n".join(f"  → {b['interface']}" for b in steps[k].get("outputs", []))
+        ins, outs = io_lines(k, "  ")
+        tip = f"{k}\n입력:\n{ins}\n출력:\n{outs}"
+        if kids:                                       # 상위 단계 — 자기 입출력은 보통 비워 두므로(경계 표시) 하위 단계를 보인다
+            parts = []
+            for c in kids:
+                ci, co = io_lines(c, "      ")
+                parts.append(f"  ▸ {c} — {steps[c]['label']}" + (f" [{tool_names(c)}]" if tool_names(c) else "")
+                             + (f"\n{ci}" if ci else "") + (f"\n{co}" if co else ""))
+            tip = f"{k} (하위 단계 {len(kids)}개)\n" + "\n".join(parts)
         svg.append(f'<g tabindex="0"><rect x="{x}" y="{yy}" width="{W}" height="{H}" rx="6" class="st"/>'
                    f'<text x="{x + 8}" y="{yy + 20}" class="sl">{e(fit(steps[k]["label"], W - 16, 12.5))}</text>'
                    f'<text x="{x + 8}" y="{yy + 37}" class="tl">{e(fit(tools, W - 16, 11))}</text>{sub}{badge}'
-                   f'<title>{e(k)}\n입력:\n{e(ins)}\n출력:\n{e(outs)}</title></g>')
+                   f'<title>{e(tip)}</title></g>')
     svg.append("</svg>")
+    # 하위 단계 표 — 상위 상자 안에는 개수만 보이므로 이름·툴·받는 데이터(✋ 수기)를 여기서
+    srows = "".join(
+        f"<tr><td>{e(steps[p]['label'])} <code>{e(p)}</code></td><td>{e(steps[c]['label'])} <code>{e(c)}</code></td><td>{e(tool_names(c))}</td>"
+        f"<td>{'<br>'.join(e(in_text(b)) for b in steps[c].get('inputs', []))}</td>"
+        f"<td>{'<br>'.join(e(b['interface']) for b in steps[c].get('outputs', []))}</td></tr>"
+        for p in steps for c in flow["children"].get(p, []))
+    sub_table = ("<h2>하위 단계</h2><div class=tw><table><tr><th>상위 단계</th><th>하위 단계</th><th>툴</th><th>받는 데이터 (종류·전달)</th>"
+                 f"<th>내놓는 데이터</th></tr>{srows}</table></div>") if srows else ""
     rows = []
     for ik, i in m["interface"].items():
         def tr(lst, pre=""):
@@ -133,6 +160,6 @@ table{border-collapse:collapse;margin:6px 0 12px}td,th{border:1px solid var(--la
         f"<p>실선 = 데이터로 이어진 선후 (선에 마우스: 계약), 점선 = 순서만, <b style='color:var(--man)'>굵은 주황 ✋</b> = 수기 전달(Tool Agent 후보), "
         f"<b style='color:var(--lp)'>보라 ↺</b> = 반복 루프. 같은 열에 선후 없이 놓인 단계는 병렬. "
         f"'수렴 뒤' 배지 = 어느 루프 몸통에도 들지 않고 루프가 끝난 뒤에 한 번 도는 단계.</p>"
-        f"<div class=wrap>{''.join(svg)}</div><h2>반복 루프</h2><div class=tw><table><tr><th>루프</th><th>몸통</th><th>나르는 데이터</th>"
+        f"<div class=wrap>{''.join(svg)}</div>{sub_table}<h2>반복 루프</h2><div class=tw><table><tr><th>루프</th><th>몸통</th><th>나르는 데이터</th>"
         f"<th>수렴 뒤 단계 (이 루프 기준)</th><th>수렴 조건</th><th>첫 바퀴</th></tr>{lrows}</table></div><h2>데이터 계약</h2>{''.join(rows)}</html>",
         encoding="utf-8", newline="\n")

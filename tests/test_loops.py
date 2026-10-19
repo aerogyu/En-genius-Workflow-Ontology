@@ -95,7 +95,7 @@ def _badged(html: str) -> set[str]:
     out = set()
     for g in re.findall(r'<g tabindex="0">(.*?)</g>', html, flags=re.S):
         if 'class="bd"' in g:
-            out.add(re.search(r"<title>([^\n<]+)", g).group(1))
+            out.add(re.search(r"<title>([^\s<]+)", g).group(1))
     return out
 
 

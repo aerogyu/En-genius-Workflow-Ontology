@@ -7,6 +7,7 @@ tools 의 T·X + registry 의 G) → ④ 산출(contracts 의 C09). 모양이 �
 
 from __future__ import annotations
 
+import difflib
 import json
 import re
 from collections import defaultdict
@@ -91,10 +92,14 @@ def check_shape(fname, data, validator, terms: Terms, rep: Report):
 
 # =========================================================================== 3층: 합치기·참조·항목
 def collect(files, rep: Report):
+    """파일들을 종류별 key 사전으로 합친다 → (m, key 자리, 파일 머리 discipline [(파일, 행, 값)]).
+    파일 머리 discipline 은 단계·계약에 복사하되(_disc_from_head) 참조 검사는 머리 줄에서 한 번만 한다 (check_refs)."""
     m = {k: {} for k in KINDS}
-    where, lower = {}, {}
+    where, lower, heads = {}, {}, []
     for fname, data in files:
         head = data.get("discipline")
+        if head is not None:
+            heads.append((fname, getattr(data, "klines", {}).get("discipline", 1), head))
         for sec, kind in SECTIONS.items():
             objs = data.get(sec)
             if objs is None:
@@ -112,12 +117,16 @@ def collect(files, rep: Report):
                 o["_file"], o["_kind"], o["_head"] = fname, kind, head
                 if kind in ("step", "interface") and "discipline" not in o and head:
                     o["discipline"] = head
+                    o["_disc_from_head"] = True
                 if kind == "step" and "discipline" not in o:
                     rep.err("R06", w, f"단계 '{k}' 의 분야가 없다", "파일 맨 위에 discipline: 을 적거나 단계에 discipline:")
                 m[kind][k] = o
-    if len(m["plan"]) != 1:
+    if not m["plan"]:
+        rep.err("R04", "전체", "plan(워크플로 머리)이 없다 — 분야·툴 목록과 함께 보통 _plan.yaml 에 한 번",
+                "_plan.yaml 이 이 폴더에 있는지 확인 (참조 검사는 이것을 고친 뒤에 한다 — 분야·툴 '없음' 이 줄줄이 나오지 않게)")
+    elif len(m["plan"]) != 1:
         rep.err("R04", "전체", f"plan(워크플로 머리)은 정확히 1개여야 한다 — 지금 {len(m['plan'])}개", "보통 _plan.yaml 에 한 번")
-    return m, where
+    return m, where, heads
 
 
 def ln(o, k=None):
@@ -125,21 +134,25 @@ def ln(o, k=None):
     return (o["_file"], (o.klines.get(k) if k and hasattr(o, "klines") else None) or o.line)
 
 
-def check_refs(m, rep: Report):
+def check_refs(m, rep: Report, heads=()):
     allkeys = {k: kind for kind in m for k in m[kind]}
     KO = {"step": "단계", "interface": "계약", "tool": "툴", "discipline": "분야", "component": "구성품", "loop": "루프", "plan": "워크플로"}
 
-    def ref(o, field, val, kind):
+    def ref(o, field, val, kind, where=None):
         if val is None or val in m[kind]:
             return
+        where = where or ln(o, field)
         if val in allkeys:
-            rep.err("R01", ln(o, field), f"{field}: '{val}' 는 {KO[allkeys[val]]} — {KO[kind]} 자리가 아니다",
+            rep.err("R01", where, f"{field}: '{val}' 는 {KO[allkeys[val]]} — {KO[kind]} 자리가 아니다",
                     "inputs/outputs 에는 계약, 순서는 after, 툴은 tools" if kind in ("interface", "step") else "")
         else:
-            rep.err("R01", ln(o, field), f"{field}: '{val}' 없음", suggest(val, m[kind]))
+            rep.err("R01", where, f"{field}: '{val}' 없음", suggest(val, m[kind]))
 
+    for fname, line, head in heads:                    # 파일 머리 discipline — 그 줄에서 한 번만 (단계·계약마다 되풀이하지 않는다)
+        ref(None, "discipline", head, "discipline", where=(fname, line))
     for k, s in m["step"].items():
-        ref(s, "discipline", s.get("discipline"), "discipline")
+        if not s.get("_disc_from_head"):
+            ref(s, "discipline", s.get("discipline"), "discipline")
         ref(s, "part_of", s.get("part_of"), "step")
         for a in s.get("after", []):
             ref(s, "after", a, "step")
@@ -158,12 +171,31 @@ def check_refs(m, rep: Report):
     for k, c in m["component"].items():
         ref(c, "broader", c.get("broader"), "component")
     for k, i in m["interface"].items():
-        ref(i, "discipline", i.get("discipline"), "discipline")
+        if not i.get("_disc_from_head"):
+            ref(i, "discipline", i.get("discipline"), "discipline")
     for k, lp in m["loop"].items():
         ref(lp, "back_from", lp.get("back_from"), "step")
         ref(lp, "back_to", lp.get("back_to"), "step")
         for x in lp.get("include", []):
             ref(lp, "include", x, "step")
+
+
+TYPE_WORDS = {"number", "integer", "int", "float", "double", "string", "str", "boolean", "bool", "enum", "struct", "숫자", "실수"}
+UNITS_FILE_HINT = "새 단위면 units.yaml 에 한 줄 (연습 폴더: 저장소 config\\units.yaml · data\\real 아래 실작성: data\\real\\config\\units.yaml)"
+
+
+def unit_hint(u, units):
+    """U02 고치는 법 — 대소문자만 다름 / 형 이름을 첫칸에 적음 / 비슷한 표기(종류 표시 — 배율·종류가 다르면 고르지 말 것) + 새 단위 안내."""
+    case = [x for x in units if x.lower() == u.lower()]
+    if case:
+        head = f"대소문자만 다르다 — {case[0]} (자동으로 고치지 않는다: MPa ≠ mPa)"
+    elif u.strip().lower() in TYPE_WORDS:
+        head = "첫칸에는 단위를 적는다 — 숫자는 단위만(무차원 1), 정수는 int, 글자는 text (형을 따로 적으려면 긴 형식 {type: …, unit: …})"
+    else:
+        near = difflib.get_close_matches(u, sorted(units), n=3, cutoff=0.6)
+        shown = ", ".join("{}({})".format(x, units[x].get("kind", "?")) for x in near)
+        head = f"혹시 {shown} ? — 같은 단위의 다른 표기일 때만 고른다 (배율·종류가 다르면 새 단위)" if near else ""
+    return (head + " / " if head else "") + UNITS_FILE_HINT
 
 
 def check_items(m, units, aliases, rep: Report):
@@ -187,10 +219,7 @@ def check_items(m, units, aliases, rep: Report):
                     alias_used[(u, aliases[u])] += 1
                     u = it["unit"] = aliases[u]
                 elif u not in units:
-                    case = [x for x in units if x.lower() == u.lower()]
-                    rep.err("U02", w, f"{scope}.{nm}: 모르는 단위 '{u}'",
-                            (f"대소문자만 다르다 — {case[0]} (자동으로 고치지 않는다: MPa ≠ mPa)" if case else suggest(u, units))
-                            + " / 새 단위면 config/units.yaml 에 한 줄 추가")
+                    rep.err("U02", w, f"{scope}.{nm}: 모르는 단위 '{u}'", unit_hint(u, units))
             if t in NUMERIC and u is None:
                 rep.err("U01", w, f"{scope}.{nm}: {t} 항목에 단위가 없다", "무차원이면 1 (한 줄 형식: '이름: 1 | 설명')")
             if t not in NUMERIC and u is not None:

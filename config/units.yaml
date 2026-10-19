@@ -34,3 +34,7 @@ aliases:
   무차원: "1"
   r/min: rpm
   kg/sec: kg/s
+  "°C": degC
+  "℃": degC
+  "m²": m2
+  "m^2": m2

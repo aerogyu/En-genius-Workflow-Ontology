@@ -62,8 +62,10 @@ def run(src: Path, out: Path | None, catalogs, rep: Report, write=True, overlay_
     files, sources = load_all(src, rep, rules, T)
     if rep.errors:                      # 모양이 틀리면 의미 검사를 하지 않는다 (연쇄 헛 오류 방지)
         return None
-    m, _ = collect(files, rep)
-    check_refs(m, rep)
+    m, _, heads = collect(files, rep)
+    if not m["plan"]:                   # _plan.yaml 이 없으면 분야·툴 참조가 줄줄이 '없음' 이 된다 — 원인(R04)만 보이고 멈춘다
+        return None
+    check_refs(m, rep, heads)
     units, aliases = load_units(overlay_dir=overlay)
     if rep.errors:
         return None

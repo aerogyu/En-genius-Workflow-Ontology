@@ -7,6 +7,7 @@ yaml.BaseLoader 를 쓴다: yes/no/0.1/1.10 을 바꾸지 않고 글자 그대�
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
@@ -32,17 +33,25 @@ class _Loader(yaml.BaseLoader):          # BaseLoader: yes/no/0.1/1.10 를 바�
     pass
 
 
+DUP_HINT = "YAML 은 뒤의 것으로 조용히 덮어쓴다 — 하나로 합치거나 지우세요"
+# 목록 항목의 머리 칸(key·name)이 같은 묶음 안에 두 번 = 대개 새 단계·계약·루프·묶음 앞의 '- ' 를 빠뜨린 것
+NEW_ITEM_HINT = "새 단계·계약·루프(또는 묶음)를 적은 것이면 그 항목 첫 줄(key: 또는 name:) 앞에 '- ' 를 붙인다 — 같은 칸을 두 번 적은 것이면 하나로 합친다"
+
+
 def _map(loader, node):
     m = LDict()
     m.line = node.start_mark.line + 1
+    dups = []
     for kn, vn in node.value:
         kl = kn.start_mark.line + 1
         k = kn.value.strip() if isinstance(kn, yaml.ScalarNode) else str(kn)
         if k in m:
-            loader.dups.append((kl, f"'{k}' 가 같은 묶음 안에 두 번 (앞은 {m.klines[k]}행)",
-                                "YAML 은 뒤의 것으로 조용히 덮어쓴다 — 하나로 합치거나 지우세요"))
+            dups.append((kl, k, m.klines[k]))
         m[k] = loader.construct_object(vn, deep=True)
         m.klines[k] = kl
+    new_item = any(k in ("key", "name") for _, k, _ in dups)
+    for kl, k, first in dups:
+        loader.dups.append((kl, f"'{k}' 가 같은 묶음 안에 두 번 (앞은 {first}행)", NEW_ITEM_HINT if new_item else DUP_HINT))
     return m
 
 
@@ -101,13 +110,22 @@ def read_yaml(path: Path, rep: Report):
     except yaml.YAMLError as e:
         mark = getattr(e, "problem_mark", None)
         line = mark.line + 1 if mark else 0
-        prob = f"{getattr(e, 'context', '') or ''} {getattr(e, 'problem', '') or ''}"
+        context = getattr(e, "context", "") or ""
+        prob = f"{context} {getattr(e, 'problem', '') or ''}"
         msg, hint = "YAML 문법 오류", str(getattr(e, "problem", e))
         for key, m_, h in YAML_HINTS:
             if key in prob:
                 msg, hint = m_, h
                 break
         lines = text.splitlines()
+        cmark = getattr(e, "context_mark", None)
+        if "while scanning a simple key" in context and cmark is not None:
+            line = cmark.line + 1                      # 원인은 칸 이름이 시작된 줄 — problem_mark 는 멈춘 다음 줄을 가리킨다
+            src = lines[line - 1] if 0 < line <= len(lines) else ""
+            if "：" in src:
+                msg, hint = "전각 콜론(：) — YAML 은 영문 콜론(:)만 안다", "전각 콜론을 영문 콜론으로 — 한/영 키를 영문으로 바꾸고 다시 (콜론 뒤에는 공백 한 칸)"
+            elif re.match(r"^\s*(-\s+)?[^\s:#]+:\S", src):
+                msg, hint = "콜론 뒤에 공백이 없다", "'칸: 값' 처럼 콜론 뒤에 공백 한 칸 (예 tools: cfx)"
         src = lines[line - 1].strip() if 0 < line <= len(lines) else ""
         rep.err("Y03", (path.name, line), f"{msg}:  {src}", hint)
         return None
