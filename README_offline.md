@@ -82,6 +82,7 @@ cmd 에서 직접: `scripts\build.bat <폴더> [survey.ttl …]` · `scripts\rel
 
 - `data\real\workflows\` 를 만들고 거기에 `_plan.yaml` + 분야별 `<분야>.yaml`. 이 폴더가 생기면 `check`·`build` 더블클릭의 기본이 된다.
 - 예시를 복사해 시작할 때는 **`_registry`·`_released` 폴더는 빼고** 복사한다 (예시 일련번호 대장을 쓰면 G01 오류).
+- 거꾸로 실데이터 폴더(대장 포함)는 **`data\real\` 아래에서만** 빌드된다 — 바탕화면 등으로 복사해 실험하면 G01 오류. 실험은 `data\real\` 아래 다른 이름의 폴더에 복사하거나 `_registry` 를 빼고 복사한다 (일련번호가 새로 붙는다).
 - 빌드가 그 폴더 안에 `_registry\`(key → 일련번호 대장)·`_released\`(동결본)를 만든다. 손으로 고치지 않는다. 지우면 일련번호가 새로 붙는다 (IRI 가 바뀐다).
 - 설정 조정은 `data\real\config\rules.yaml`·`units.yaml` 에 **바꿀 키만** 적는다 (저장소 `config\` 위에 덮인다 — 예: 새 단위 한 줄, 메시지 수준 `levels: {R05: 참고}`).
   이 덮어쓰기는 `data\real\` 아래 폴더를 빌드할 때만 쓰인다 (예시·연습 사본에는 섞지 않는다).

@@ -2,7 +2,8 @@
 
   ① 읽기(loader) → ② 펼치기(normalize) + 모양(checks.check_shape) — 모양이 틀리면 의미 검사를 하지 않는다 (연쇄 헛 오류 방지)
   → ③ 의미: 참조·항목(checks) → 흐름·루프(flow) → 툴(tools) → 인명(checks) → 판(versioning) → 레지스트리(registry)
-  → ④ 산출(out 이 있을 때): TTL 2그래프·trig(rdf) · 계약 JSON Schema·골격(contracts) · 그림(html) · canonical.json.
+  → ④ 산출(out 이 있을 때): TTL 2그래프·trig(rdf) · 계약 JSON Schema·골격(contracts) · 그림(html) · canonical.json
+  → 산출이 끝난 뒤에만 YAML 폴더의 상태 파일(_registry)을 쓴다.
 오류가 있으면 결과 파일을 만들지 않는다. 런타임 의존: pyyaml · jsonschema · rdflib — linkml 은 import 하지 않는다.
 """
 
@@ -21,7 +22,7 @@ from engenius_wf.loader import read_yaml
 from engenius_wf.model import SECTIONS, Terms
 from engenius_wf.normalize import Normalizer
 from engenius_wf.rdf import write_graphs, write_rdf
-from engenius_wf.registry import assign_ids, origin_of
+from engenius_wf.registry import assign_ids, origin_of, write_registry
 from engenius_wf.report import Report
 from engenius_wf.tools import check_tools, load_catalog
 from engenius_wf.versioning import check_versions
@@ -74,11 +75,11 @@ def run(src: Path, out: Path | None, catalogs, rep: Report, write=True, overlay_
     rel_all = check_versions(m, src, rep)
     if rep.errors or flow is None:
         return None
-    ids, deprecated = assign_ids(m, src, rep, write=write and out is not None)
+    ids, deprecated, reg = assign_ids(m, src, rep)
     if ids is None:
         return None
     ctx = {"m": m, "flow": flow, "ids": ids, "units": units, "rules": rules, "rel_all": rel_all, "T": T, "files": files, "cat": cat,
-           "overlay": overlay}
+           "overlay": overlay, "registry": reg}
     if out is None:
         return ctx
     out.mkdir(parents=True, exist_ok=True)
@@ -91,6 +92,8 @@ def run(src: Path, out: Path | None, catalogs, rep: Report, write=True, overlay_
         if sec != "plan":
             canon[sec] = [strip_private(o) for o in m[kind].values()]
     (out / "canonical.json").write_text(json.dumps(canon, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+    if write:                           # YAML 폴더의 상태 파일은 산출이 모두 끝난 뒤에만 쓴다 (중간에 실패하면 대장은 그대로)
+        write_registry(src, reg)
     ctx.update({"A": A, "D": D, "n_schema": n_schema})
     return ctx
 
