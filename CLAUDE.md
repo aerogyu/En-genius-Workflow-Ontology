@@ -22,7 +22,7 @@
 
 **Leo 결정 Q1~Q4 (2026-10-19, 전부 권장안)**
 - Q1 ID: YAML 은 사람이 읽는 key, RDF IRI 는 레지스트리가 주는 무의미 일련번호(`STEP-000001` 등). 개명은 `renamed_from` 으로 IRI 유지, 사라진 key 는 폐기(재사용 안 함).
-- Q2 '계약 하나 = 만드는 단계 하나' — 어기면 오류(D01). 판이 다르면 계약을 나누고 반복 갱신은 loops 로. (실제 분야를 써 보고 막히면 from_step 확장 검토)
+- Q2 '계약 하나 = 만드는 단계 하나' — 어기면 오류(D01). 판이 다르면(= 다른 단계가 고친 결과 — 계약 semver 가 아님) 계약을 나누고 반복 갱신은 loops 로. (실제 분야를 써 보고 막히면 from_step 확장 검토)
 - Q3 툴 연결은 Tool(제품) 수준 + `Discipline.related_parts` 로 필요할 때 툴사용(파트×툴)으로 좁힌다.
 - Q4 계약 판 = semver + release 동결(일자·사유) + 필요한 올림 자동 계산(V02·V03) + 옛 판 스키마 유지. 판 규칙표는 config 로 뺀다(W3 남은 일).
 
@@ -44,7 +44,7 @@
 - 툴은 **TOOL ID 로 참조**: `_plan.yaml` 의 tools 표 한 곳에만 `tool_id`(+ `label_at_link` 스냅샷)를 사람이 적는다 (`link-tools` 후보 CSV 를 보고). 단계는 툴 key 로만 부른다.
 - **4술어 연결 계약** — 이 저장소가 Tool 온톨로지에서 읽는 것: `eg:Tool` · `skos:prefLabel/altLabel` · `eg:status` · `eg:merged_into` (`src/engenius_wf/tools.py` LINK_PREDICATES).
   워크플로 쪽은 `egid:TOOL-…` 노드에 타입·라벨을 쓰지 않는다. 교차 질의 Q8 은 그 밖의 6술어(usage_tool·automation_if·io_owner·direction·extensions·transfer_method)도 읽는다 — W5 유지 테스트 범위.
-- **IRI 공간 `egid:`(`http://en-genius.local/id/`) 공유, 유형 접두는 겹치지 않는다** — Tool: TOOL·USE·IO·CAT·FLD·LOAD (FEED·HANDOFF 예정) /
+- **IRI 공간 `egid:`(`http://en-genius.local/id/`) 공유, 유형 접두는 겹치지 않는다** — Tool: TOOL·USE·IO·CAT·FLD·LOAD·FEED·RECON·ISO·HANDOFF (스키마 id 패턴 10개, FEED·RECON·ISO·HANDOFF 는 파생 — 인스턴스는 M4 부터) /
   워크플로: PLAN·DSC·CPN·TRF·STEP·IFC·LOOP(일련번호) · INB·OUB·IFI·REC·VAR·REL·SPLAN(해시) · BUILD·SRC. 술어 이름공간은 `http://en-genius.local/onto/wf/`. Fuseki 한 데이터셋에 그래프만 나란히 올리면 매핑 없이 조인된다.
 - `transfer`(전달 방법) 값 = Tool 온톨로지 '전달 방법' 선택지 5개 + '미상' (짧은 별칭은 `config/rules.yaml`). '메일·수기 전달' = Tool Agent 후보.
 - 같은 `requirements.lock`·wheels·Java·Fuseki. 사내 설치는 Tool 온톨로지의 `offline\wheels` 를 그대로 쓴다 (`scripts/setup_offline.bat`, `TOOL_ONTO_DIR`).
@@ -96,7 +96,7 @@ offline/         (git 제외 파일만) selftest 결과·설치 판 표식·whee
 - Python 3.10+. 표준 라이브러리 우선. 런타임 의존은 pyyaml·jsonschema·rdflib 뿐 (linkml 은 `schema` 명령만).
 - YAML 은 **엄격하게 읽는다** — `yaml.BaseLoader` 로 모든 값을 글자로, 참/거짓·정수는 스키마상 그 형인 칸에서만 바꾼다. 모든 메시지는 파일·행을 가리킨다.
 - 메시지 = 수준(오류·경고·참고) + **코드**(Y·S·R·U·C·D·F·L·V·T/X·G·P·J) + 파일 행 + 문구 + 고치는 법. 새 검사는 코드를 주고 `docs/01` 4장 표·`docs/02` 를 함께 고친다.
-  오류가 있으면 결과 파일을 만들지 않는다 (rc 1). 설정 오류는 `[NG] 설정 오류: …` 한 줄 rc 2 (traceback 금지). 사내 반출은 코드별 건수만.
+  오류가 있으면 결과 파일을 만들지 않는다 (rc 1). 설정 오류는 `[NG] 설정 오류: …` 한 줄 rc 2 (traceback 금지). 사내 반출은 코드별 건수만 (보고서 맨 끝 값 없는 한 줄 `== 코드별 건수 …`).
 - 규칙에 쓰이는 값(전달 방법 별칭·수기 값·참거짓 글자·메시지 수준·인명 패턴·단위)은 `config/` 에 둔다 — 사내에서 코드 수정 없이 오버레이로 조정.
 - ID 는 레지스트리의 무의미 일련번호(결정 Q1). 사람이 읽는 이름은 `rdfs:label`@ko, key 는 `skos:notation`. 파생 결과는 derived named graph 에 따로, 매번 전체 재계산, provenance(BUILD·SRC·일시).
 - 모든 기능은 **rdflib 와 Fuseki 에서 같은 결과**. SPARQL 은 표준 1.1 문법만 (`queries/`).

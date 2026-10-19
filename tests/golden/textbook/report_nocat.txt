@@ -3,3 +3,4 @@
 [참고 L08] perf.yaml 57행  루프 'loop-cmp-match': 몸통 ['cmp-map', 'cmp-meanline', 'perf-offdesign'] · 나르는 데이터 ['if-perf-od'] · 수렴 뒤 단계 ['cmp-cfd-check']
 [참고 U03] 전체  단위 별칭 '퍼센트' 를 '%' 로 읽음 (4곳)
 == 오류 0 · 경고 0 · 참고 3
+== 코드별 건수 (값 없음 — 밖으로 가져갈 수 있는 줄): 참고 D07 1, L08 1, U03 1

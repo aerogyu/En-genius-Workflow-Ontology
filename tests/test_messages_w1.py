@@ -106,6 +106,20 @@ def test_y04_plain_duplicate_keeps_merge_hint(tmp_path):
     assert "하나로 합치거나 지우세요" in hint
 
 
+COUNT_LINE = re.compile(r"== 코드별 건수 \(값 없음 — 밖으로 가져갈 수 있는 줄\): (없음|(오류|경고|참고) [A-Z]\d\d \d+(, [A-Z]\d\d \d+)*( · (오류|경고|참고) [A-Z]\d\d \d+(, [A-Z]\d\d \d+)*)*)")
+
+
+def test_report_ends_with_value_free_code_count_line(tmp_path):
+    """README 8장이 반출 가능하다고 안내하는 '코드별 건수' 는 보고서 맨 끝 한 줄 — 수준·코드·건수만, 값 없음 (지적 39)."""
+    rc, out = _check(tmp_path, "short", [("perf.yaml", "Tt4:  K    |", "Tt4:  kelvin |"),
+                                          ("cmp.yaml", "    tools: excel", "    tools: excel\n    note: 홍길동 책임 확인")])
+    last = out.rstrip("\n").splitlines()[-1]
+    assert COUNT_LINE.fullmatch(last), last
+    assert "오류 U02 1" in last and "경고 P01 1" in last and "kelvin" not in last
+    rc, out = run_cli(["check", copy_example(tmp_path, "textbook", "tb2", state=False)])
+    assert COUNT_LINE.fullmatch(out.rstrip("\n").splitlines()[-1])
+
+
 def test_html_shows_sub_steps(tmp_path):
     """상위 단계 상자의 말풍선과 그림 아래 '하위 단계' 표에 하위 단계 이름·툴·받는 데이터가 보인다 (지적 14)."""
     d = copy_example(tmp_path, "textbook", state=False)

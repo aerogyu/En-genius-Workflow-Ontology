@@ -22,6 +22,10 @@ G_DER = URIRef("http://en-genius.local/graph/workflow-derived")      # 계산분
 # 종류 → (클래스, IRI 접두, 일련번호 자릿수) — 레지스트리가 key 에 무의미 일련번호를 준다 (Q1)
 KINDS = {"plan": ("Workflow", "PLAN", 4), "discipline": ("Discipline", "DSC", 4), "component": ("Component", "CPN", 4),
          "tool": ("ToolRef", "TRF", 4), "step": ("Step", "STEP", 6), "interface": ("Interface", "IFC", 6), "loop": ("Loop", "LOOP", 4)}
+# 레지스트리 ID 에서 해시로 만드는 IRI 접두 (rdf.py) · 빌드 기록 접두 — KINDS 와 함께 Tool 온톨로지 egid: 접두와 겹치지 않아야 한다
+# (tests/test_prefixes.py 가 빌드 출력이 이 목록 밖 접두를 쓰지 않는지, 형제 저장소가 있으면 겹침 0 인지 본다)
+HASH_PREFIXES = ("INB", "OUB", "IFI", "REC", "VAR", "REL", "SPLAN")
+RUN_PREFIXES = ("BUILD", "SRC")
 # YAML 절 → 종류
 SECTIONS = {"plan": "plan", "disciplines": "discipline", "components": "component", "tools": "tool",
             "steps": "step", "interfaces": "interface", "loops": "loop"}

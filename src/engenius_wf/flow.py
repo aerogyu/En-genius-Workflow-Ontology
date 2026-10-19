@@ -53,7 +53,7 @@ def analyse_flow(m, rules, rep: Report):
         ins = [b["interface"] for b in s.get("inputs", [])]
         for i in set(outs) & set(ins):
             rep.err("D08", ln(s, "inputs"), f"단계 '{k}' 가 계약 '{i}' 을 받고 내놓기도 한다",
-                    "고친 판이면 새 계약(…-v2)으로, 반복이면 loops 로")
+                    "받은 것을 고쳐 내놓는 것이면 새 계약(예 …-updated)으로 나누고, 반복이면 loops 로")
         for i in outs:
             producers[i].append(k)
         for i in ins:
@@ -66,7 +66,7 @@ def analyse_flow(m, rules, rep: Report):
         real_prod[ik] = real
         if len(real) > 1:
             rep.err("D01", ln(i, "key"), f"계약 '{ik}' 을 만드는 단계가 둘 이상: {', '.join(real)}",
-                    "계약 하나에 만드는 단계 하나 — 판이 다르면 계약을 나누세요 (반복이면 loops)")
+                    "계약 하나에 만드는 단계 하나 — 다른 단계가 고친 결과면 새 계약(예 …-updated)으로 나누세요 (계약 판 version 을 올리는 것으로는 풀리지 않는다, 반복이면 loops)")
         if not producers[ik] and not i.get("external") and ik not in struct_refs:
             rep.warn("D02", ln(i, "key"), f"계약 '{ik}' 을 만드는 단계가 없다", "워크플로 밖에서 오면 external: true")
         if producers[ik] and i.get("external"):
