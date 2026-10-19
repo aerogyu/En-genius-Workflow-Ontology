@@ -1,0 +1,9 @@
+{
+  "contract": "if-cmp-cfd-summary",
+  "version": "0.1.0",
+  "case": "골격",
+  "data": {
+    "eta_is_cfd": 0,
+    "report": "example.pdf"
+  }
+}

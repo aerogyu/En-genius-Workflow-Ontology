@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://en-genius.local/schema/if-cycle-dp/0.1.0.json",
+  "title": "설계점 사이클 결과 0.1.0",
+  "x-interface": {
+    "key": "if-cycle-dp",
+    "version": "0.1.0",
+    "iri": "http://en-genius.local/id/IFC-000006"
+  },
+  "type": "object",
+  "required": [
+    "contract",
+    "version",
+    "data"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "if-cycle-dp"
+    },
+    "version": {
+      "const": "0.1.0"
+    },
+    "produced_by": {
+      "type": "string",
+      "description": "만든 단계 key"
+    },
+    "case": {
+      "type": "string",
+      "description": "사례 이름 (자유)"
+    },
+    "iteration": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "루프 반복 회차 — 0 = 첫 바퀴 가정값(Loop.initial)"
+    },
+    "data": {
+      "$ref": "#/$defs/_data"
+    }
+  },
+  "$defs": {
+    "_data": {
+      "type": "object",
+      "title": "설계점 사이클 결과",
+      "properties": {
+        "OPR": {
+          "title": "전체 압력비",
+          "x-unit": "1",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/UNITLESS",
+          "description": "[1]",
+          "type": "number"
+        },
+        "Tt4": {
+          "title": "터빈 입구 전온도",
+          "x-unit": "K",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/K",
+          "description": "[K]",
+          "type": "number",
+          "minimum": 800.0,
+          "maximum": 2200.0
+        },
+        "BPR": {
+          "title": "바이패스비",
+          "x-unit": "1",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/UNITLESS",
+          "description": "[1]",
+          "type": "number"
+        },
+        "stations": {
+          "title": "스테이션 표",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Station"
+          }
+        }
+      },
+      "required": [
+        "OPR",
+        "Tt4",
+        "stations"
+      ],
+      "additionalProperties": false
+    },
+    "Station": {
+      "type": "object",
+      "title": "스테이션 상태",
+      "properties": {
+        "station": {
+          "title": "스테이션 번호 (SAE AS755 관례 2·25·3·4·45·5)",
+          "type": "string"
+        },
+        "W": {
+          "title": "질량유량",
+          "x-unit": "kg/s",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/KiloGM-PER-SEC",
+          "description": "[kg/s]",
+          "type": "number"
+        },
+        "Pt": {
+          "title": "전압",
+          "x-unit": "kPa",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/KiloPA",
+          "description": "[kPa]",
+          "type": "number"
+        },
+        "Tt": {
+          "title": "전온도",
+          "x-unit": "K",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/K",
+          "description": "[K]",
+          "type": "number"
+        }
+      },
+      "required": [
+        "station",
+        "W",
+        "Pt",
+        "Tt"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

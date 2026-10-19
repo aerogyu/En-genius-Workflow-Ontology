@@ -1,0 +1,149 @@
+{
+ "plan": {
+  "key": "concept-design",
+  "label": "개념설계 워크플로 (교과서 예시)",
+  "phase": "개념설계",
+  "version": "0.1"
+ },
+ "disciplines": [
+  {
+   "key": "perf",
+   "label": "성능"
+  },
+  {
+   "key": "cmp",
+   "label": "압축기"
+  }
+ ],
+ "components": [],
+ "tools": [
+  {
+   "key": "gasturb",
+   "label": "GasTurb"
+  },
+  {
+   "key": "excel",
+   "label": "Excel"
+  }
+ ],
+ "steps": [
+  {
+   "key": "cmp-meanline",
+   "label": "압축기 1D 평균반경 설계",
+   "tools": [
+    "excel"
+   ],
+   "inputs": [
+    {
+     "interface": "if-cycle-dp",
+     "transfer": "메일·수기 전달"
+    }
+   ],
+   "outputs": [
+    {
+     "interface": "if-cmp-map"
+    }
+   ],
+   "discipline": "cmp"
+  },
+  {
+   "key": "perf-cycle",
+   "label": "설계점 사이클 해석",
+   "tools": [
+    "gasturb"
+   ],
+   "inputs": [
+    {
+     "interface": "if-cmp-map"
+    }
+   ],
+   "outputs": [
+    {
+     "interface": "if-cycle-dp"
+    }
+   ],
+   "discipline": "perf"
+  }
+ ],
+ "interfaces": [
+  {
+   "key": "if-cmp-map",
+   "label": "압축기 특성 맵",
+   "version": "0.1.0",
+   "items": [
+    {
+     "name": "map_file",
+     "type": "file",
+     "formats": [
+      "csv"
+     ],
+     "label": "맵 파일 (속도선별 수정유량·압력비·효율)"
+    },
+    {
+     "name": "surge_margin",
+     "type": "number",
+     "unit": "%",
+     "label": "설계점 서지 마진"
+    },
+    {
+     "type": "enum",
+     "values": [
+      "1D 상관식",
+      "3D CFD",
+      "시험"
+     ],
+     "label": "맵 출처",
+     "name": "map_source"
+    }
+   ],
+   "discipline": "cmp"
+  },
+  {
+   "key": "if-cycle-dp",
+   "label": "설계점 사이클 결과",
+   "version": "0.1.0",
+   "items": [
+    {
+     "name": "W2",
+     "type": "number",
+     "unit": "kg/s",
+     "label": "압축기 입구 유량"
+    },
+    {
+     "name": "PR_c",
+     "type": "number",
+     "unit": "1",
+     "label": "압축기 압력비"
+    },
+    {
+     "name": "Tt4",
+     "type": "number",
+     "unit": "K",
+     "label": "터빈 입구 전온도"
+    },
+    {
+     "name": "BPR",
+     "type": "number",
+     "unit": "1",
+     "label": "바이패스비",
+     "required": false
+    }
+   ],
+   "discipline": "perf"
+  }
+ ],
+ "loops": [
+  {
+   "key": "loop-cmp-match",
+   "label": "압축기–사이클 매칭",
+   "back_from": "cmp-meanline",
+   "back_to": "perf-cycle",
+   "until": "맵을 반영한 사이클 재정합에서 추력 오차 1 % 이내 (예시 값, 판정은 엔지니어)",
+   "initial": "첫 바퀴는 맵 없이 설계점 효율 가정값",
+   "monitor": [
+    "if-cmp-map.surge_margin"
+   ],
+   "max_iterations": 5
+  }
+ ]
+}

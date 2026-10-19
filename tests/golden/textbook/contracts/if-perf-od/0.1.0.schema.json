@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://en-genius.local/schema/if-perf-od/0.1.0.json",
+  "title": "탈설계점 작동점 0.1.0",
+  "x-interface": {
+    "key": "if-perf-od",
+    "version": "0.1.0",
+    "iri": "http://en-genius.local/id/IFC-000007"
+  },
+  "type": "object",
+  "required": [
+    "contract",
+    "version",
+    "data"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "if-perf-od"
+    },
+    "version": {
+      "const": "0.1.0"
+    },
+    "produced_by": {
+      "type": "string",
+      "description": "만든 단계 key"
+    },
+    "case": {
+      "type": "string",
+      "description": "사례 이름 (자유)"
+    },
+    "iteration": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "루프 반복 회차 — 0 = 첫 바퀴 가정값(Loop.initial)"
+    },
+    "data": {
+      "$ref": "#/$defs/_data"
+    }
+  },
+  "$defs": {
+    "_data": {
+      "type": "object",
+      "title": "탈설계점 작동점",
+      "properties": {
+        "N_rel": {
+          "title": "상대 회전수",
+          "x-unit": "%",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/PERCENT",
+          "description": "[%]",
+          "type": "number"
+        },
+        "W2R": {
+          "title": "압축기 입구 수정 유량",
+          "x-unit": "kg/s",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/KiloGM-PER-SEC",
+          "description": "[kg/s]",
+          "type": "number"
+        },
+        "PR_c": {
+          "title": "압축기 압력비",
+          "x-unit": "1",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/UNITLESS",
+          "description": "[1]",
+          "type": "number"
+        },
+        "mismatch": {
+          "title": "설계점 대비 작동점 차이",
+          "x-unit": "%",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/PERCENT",
+          "description": "[%]",
+          "type": "number"
+        }
+      },
+      "required": [
+        "N_rel",
+        "W2R",
+        "PR_c",
+        "mismatch"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

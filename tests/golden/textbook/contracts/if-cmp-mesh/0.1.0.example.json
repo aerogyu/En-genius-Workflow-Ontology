@@ -1,0 +1,9 @@
+{
+  "contract": "if-cmp-mesh",
+  "version": "0.1.0",
+  "case": "골격",
+  "data": {
+    "mesh_file": "example.cgns",
+    "n_cells": 0
+  }
+}

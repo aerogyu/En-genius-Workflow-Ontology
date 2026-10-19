@@ -1,0 +1,10 @@
+{
+  "contract": "if-cmp-map",
+  "version": "0.1.0",
+  "case": "골격",
+  "data": {
+    "map_file": "example.csv",
+    "surge_margin": 0,
+    "map_source": "1D 상관식"
+  }
+}

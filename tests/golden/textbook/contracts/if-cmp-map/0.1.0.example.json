@@ -1,0 +1,51 @@
+{
+  "contract": "if-cmp-map",
+  "version": "0.1.0",
+  "case": "골격",
+  "data": {
+    "speed_lines": [
+      {
+        "N_rel": 0,
+        "points": [
+          {
+            "W_corr": 0,
+            "PR": 0,
+            "eta": 0.0
+          },
+          {
+            "W_corr": 0,
+            "PR": 0,
+            "eta": 0.0
+          },
+          {
+            "W_corr": 0,
+            "PR": 0,
+            "eta": 0.0
+          }
+        ]
+      },
+      {
+        "N_rel": 0,
+        "points": [
+          {
+            "W_corr": 0,
+            "PR": 0,
+            "eta": 0.0
+          },
+          {
+            "W_corr": 0,
+            "PR": 0,
+            "eta": 0.0
+          },
+          {
+            "W_corr": 0,
+            "PR": 0,
+            "eta": 0.0
+          }
+        ]
+      }
+    ],
+    "surge_margin": 0,
+    "map_source": "1D 상관식"
+  }
+}

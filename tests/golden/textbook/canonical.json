@@ -1,0 +1,553 @@
+{
+ "plan": {
+  "key": "concept-design",
+  "label": "개념설계 워크플로 (교과서 예시)",
+  "phase": "개념설계",
+  "version": "0.1"
+ },
+ "disciplines": [
+  {
+   "key": "perf",
+   "label": "성능"
+  },
+  {
+   "key": "cmp",
+   "label": "압축기"
+  },
+  {
+   "key": "comb",
+   "label": "연소기"
+  },
+  {
+   "key": "trb",
+   "label": "터빈"
+  },
+  {
+   "key": "cool",
+   "label": "냉각"
+  },
+  {
+   "key": "sas",
+   "label": "이차유로"
+  }
+ ],
+ "components": [
+  {
+   "key": "compressor",
+   "label": "압축기"
+  },
+  {
+   "key": "hpc",
+   "label": "고압압축기",
+   "broader": "compressor"
+  }
+ ],
+ "tools": [
+  {
+   "key": "gasturb",
+   "label": "GasTurb",
+   "tool_id": "TOOL-900005",
+   "label_at_link": "GasTurb 13"
+  },
+  {
+   "key": "axstream",
+   "label": "AxSTREAM",
+   "tool_id": "TOOL-900002",
+   "label_at_link": "AxSTREAM"
+  },
+  {
+   "key": "excel",
+   "label": "Excel",
+   "tool_id": "TOOL-000002",
+   "label_at_link": "Excel"
+  },
+  {
+   "key": "turbogrid",
+   "label": "ANSYS TurboGrid"
+  },
+  {
+   "key": "cfx",
+   "label": "ANSYS CFX"
+  },
+  {
+   "key": "meanline-py",
+   "label": "평균반경 설계 스크립트 (가상)",
+   "not_in_survey": "개인 스크립트라 조사 대상 아님"
+  }
+ ],
+ "steps": [
+  {
+   "key": "cmp-meanline",
+   "label": "압축기 1D 평균반경 설계 (단수·속도삼각형)",
+   "tools": [
+    "meanline-py",
+    "excel"
+   ],
+   "components": [
+    "hpc"
+   ],
+   "inputs": [
+    {
+     "interface": "if-cycle-dp",
+     "transfer": "메일·수기 전달",
+     "tool": "excel"
+    },
+    {
+     "interface": "if-perf-od",
+     "transfer": "메일·수기 전달",
+     "tool": "excel"
+    }
+   ],
+   "outputs": [
+    {
+     "interface": "if-cmp-1d",
+     "tool": "meanline-py",
+     "format": "csv"
+    }
+   ],
+   "discipline": "cmp"
+  },
+  {
+   "key": "cmp-map",
+   "label": "압축기 특성 맵 생성",
+   "tools": [
+    "axstream"
+   ],
+   "components": [
+    "hpc"
+   ],
+   "inputs": [
+    {
+     "interface": "if-cmp-1d",
+     "transfer": "파일 저장",
+     "format": "csv"
+    }
+   ],
+   "outputs": [
+    {
+     "interface": "if-cmp-map"
+    }
+   ],
+   "discipline": "cmp"
+  },
+  {
+   "key": "cmp-cfd-check",
+   "label": "압축기 3D 유동 확인 (설계점)",
+   "components": [
+    "hpc"
+   ],
+   "inputs": [
+    {
+     "interface": "if-cmp-1d"
+    }
+   ],
+   "outputs": [
+    {
+     "interface": "if-cmp-cfd-summary"
+    }
+   ],
+   "discipline": "cmp"
+  },
+  {
+   "key": "cmp-cfd-mesh",
+   "label": "압축기 유로 메시 생성",
+   "part_of": "cmp-cfd-check",
+   "tools": [
+    "turbogrid"
+   ],
+   "inputs": [
+    {
+     "interface": "if-cmp-1d"
+    }
+   ],
+   "outputs": [
+    {
+     "interface": "if-cmp-mesh"
+    }
+   ],
+   "discipline": "cmp"
+  },
+  {
+   "key": "cmp-cfd-solve",
+   "label": "압축기 3D 정상 유동 해석",
+   "part_of": "cmp-cfd-check",
+   "tools": [
+    "cfx"
+   ],
+   "inputs": [
+    {
+     "interface": "if-cmp-mesh"
+    }
+   ],
+   "outputs": [
+    {
+     "interface": "if-cmp-cfd-summary"
+    }
+   ],
+   "discipline": "cmp"
+  },
+  {
+   "key": "perf-cycle-dp",
+   "label": "설계점 사이클 해석",
+   "tools": [
+    "gasturb"
+   ],
+   "inputs": [
+    {
+     "interface": "if-engine-reqs"
+    }
+   ],
+   "outputs": [
+    {
+     "interface": "if-cycle-dp"
+    }
+   ],
+   "discipline": "perf"
+  },
+  {
+   "key": "perf-offdesign",
+   "label": "탈설계점 성능 해석 (부품 맵 매칭)",
+   "tools": [
+    "gasturb"
+   ],
+   "inputs": [
+    {
+     "interface": "if-cycle-dp"
+    },
+    {
+     "interface": "if-cmp-map",
+     "transfer": "파일 저장",
+     "format": "csv"
+    }
+   ],
+   "outputs": [
+    {
+     "interface": "if-perf-od"
+    }
+   ],
+   "discipline": "perf"
+  }
+ ],
+ "interfaces": [
+  {
+   "key": "if-cmp-1d",
+   "label": "압축기 1D 설계 결과",
+   "version": "0.1.0",
+   "items": [
+    {
+     "name": "n_stages",
+     "type": "integer",
+     "unit": "1",
+     "label": "단수"
+    },
+    {
+     "name": "PR_c",
+     "type": "number",
+     "unit": "1",
+     "label": "설계 압력비"
+    },
+    {
+     "unit": "1",
+     "label": "등엔트로피 효율",
+     "minimum": 0.0,
+     "maximum": 1.0,
+     "name": "eta_is",
+     "type": "number"
+    },
+    {
+     "name": "N_mech",
+     "type": "number",
+     "unit": "rpm",
+     "label": "기계 회전수"
+    },
+    {
+     "name": "flowpath",
+     "type": "file",
+     "formats": [
+      "csv"
+     ],
+     "label": "유로 형상 (자오면 좌표)"
+    }
+   ],
+   "discipline": "cmp"
+  },
+  {
+   "key": "if-cmp-map",
+   "label": "압축기 특성 맵",
+   "version": "0.1.0",
+   "records": [
+    {
+     "name": "MapPoint",
+     "label": "맵 한 점",
+     "items": [
+      {
+       "name": "W_corr",
+       "type": "number",
+       "unit": "kg/s",
+       "label": "수정 유량"
+      },
+      {
+       "name": "PR",
+       "type": "number",
+       "unit": "1",
+       "label": "압력비"
+      },
+      {
+       "unit": "1",
+       "label": "단열효율",
+       "minimum": 0.0,
+       "maximum": 1.0,
+       "name": "eta",
+       "type": "number"
+      }
+     ]
+    },
+    {
+     "name": "SpeedLine",
+     "label": "속도선",
+     "items": [
+      {
+       "name": "N_rel",
+       "type": "number",
+       "unit": "%",
+       "label": "상대 수정 회전수"
+      },
+      {
+       "type": "struct",
+       "ref": "MapPoint",
+       "list": true,
+       "min_items": 3,
+       "label": "맵 점",
+       "name": "points"
+      }
+     ]
+    }
+   ],
+   "items": [
+    {
+     "type": "struct",
+     "ref": "SpeedLine",
+     "list": true,
+     "min_items": 2,
+     "label": "속도선",
+     "name": "speed_lines"
+    },
+    {
+     "name": "surge_margin",
+     "type": "number",
+     "unit": "%",
+     "label": "설계점 서지 마진"
+    },
+    {
+     "name": "map_file",
+     "type": "file",
+     "formats": [
+      "csv",
+      "txt"
+     ],
+     "label": "맵 파일",
+     "required": false
+    },
+    {
+     "type": "enum",
+     "values": [
+      "1D 상관식",
+      "3D CFD",
+      "시험"
+     ],
+     "label": "맵 출처",
+     "name": "map_source"
+    }
+   ],
+   "discipline": "cmp"
+  },
+  {
+   "key": "if-cmp-mesh",
+   "label": "압축기 유로 메시",
+   "version": "0.1.0",
+   "items": [
+    {
+     "name": "mesh_file",
+     "type": "file",
+     "formats": [
+      "cgns"
+     ],
+     "label": "메시 파일"
+    },
+    {
+     "name": "n_cells",
+     "type": "integer",
+     "unit": "1",
+     "label": "격자 수"
+    }
+   ],
+   "discipline": "cmp"
+  },
+  {
+   "key": "if-cmp-cfd-summary",
+   "label": "압축기 3D 유동 확인 요약",
+   "version": "0.1.0",
+   "deliverable": true,
+   "items": [
+    {
+     "name": "eta_is_cfd",
+     "type": "number",
+     "unit": "1",
+     "label": "CFD 효율"
+    },
+    {
+     "name": "report",
+     "type": "file",
+     "formats": [
+      "pdf",
+      "docx"
+     ],
+     "label": "보고서"
+    }
+   ],
+   "discipline": "cmp"
+  },
+  {
+   "key": "if-engine-reqs",
+   "label": "엔진 요구 조건",
+   "version": "1.0.0",
+   "status": "확정",
+   "external": true,
+   "items": [
+    {
+     "name": "Fn_TO",
+     "type": "number",
+     "unit": "kN",
+     "label": "이륙 추력"
+    },
+    {
+     "name": "alt",
+     "type": "number",
+     "unit": "m",
+     "label": "설계점 고도"
+    },
+    {
+     "name": "Mach",
+     "type": "number",
+     "unit": "1",
+     "label": "설계점 비행 마하수"
+    }
+   ],
+   "discipline": "perf"
+  },
+  {
+   "key": "if-cycle-dp",
+   "label": "설계점 사이클 결과",
+   "version": "0.1.0",
+   "records": [
+    {
+     "name": "Station",
+     "label": "스테이션 상태",
+     "items": [
+      {
+       "name": "station",
+       "type": "string",
+       "label": "스테이션 번호 (SAE AS755 관례 2·25·3·4·45·5)"
+      },
+      {
+       "name": "W",
+       "type": "number",
+       "unit": "kg/s",
+       "label": "질량유량"
+      },
+      {
+       "name": "Pt",
+       "type": "number",
+       "unit": "kPa",
+       "label": "전압"
+      },
+      {
+       "name": "Tt",
+       "type": "number",
+       "unit": "K",
+       "label": "전온도"
+      }
+     ]
+    }
+   ],
+   "items": [
+    {
+     "name": "OPR",
+     "type": "number",
+     "unit": "1",
+     "label": "전체 압력비"
+    },
+    {
+     "unit": "K",
+     "label": "터빈 입구 전온도",
+     "minimum": 800.0,
+     "maximum": 2200.0,
+     "name": "Tt4",
+     "type": "number"
+    },
+    {
+     "name": "BPR",
+     "type": "number",
+     "unit": "1",
+     "label": "바이패스비",
+     "required": false
+    },
+    {
+     "name": "stations",
+     "list": true,
+     "type": "struct",
+     "ref": "Station",
+     "label": "스테이션 표"
+    }
+   ],
+   "discipline": "perf"
+  },
+  {
+   "key": "if-perf-od",
+   "label": "탈설계점 작동점",
+   "version": "0.1.0",
+   "items": [
+    {
+     "name": "N_rel",
+     "type": "number",
+     "unit": "%",
+     "label": "상대 회전수"
+    },
+    {
+     "name": "W2R",
+     "type": "number",
+     "unit": "kg/s",
+     "label": "압축기 입구 수정 유량"
+    },
+    {
+     "name": "PR_c",
+     "type": "number",
+     "unit": "1",
+     "label": "압축기 압력비"
+    },
+    {
+     "name": "mismatch",
+     "type": "number",
+     "unit": "%",
+     "label": "설계점 대비 작동점 차이"
+    }
+   ],
+   "discipline": "perf"
+  }
+ ],
+ "loops": [
+  {
+   "key": "loop-cmp-match",
+   "label": "압축기–사이클 매칭 루프",
+   "back_from": "perf-offdesign",
+   "back_to": "cmp-meanline",
+   "until": "작동점 차이 mismatch 1 % 이내이고 서지 마진 15 % 이상 (예시 값, 판정은 엔지니어)",
+   "initial": "첫 바퀴는 탈설계 결과 없이 설계점 값만으로 (mismatch 0 가정)",
+   "monitor": [
+    "if-perf-od.mismatch",
+    "if-cmp-map.surge_margin"
+   ],
+   "max_iterations": 5
+  }
+ ]
+}

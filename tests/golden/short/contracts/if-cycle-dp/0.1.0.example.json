@@ -1,0 +1,10 @@
+{
+  "contract": "if-cycle-dp",
+  "version": "0.1.0",
+  "case": "골격",
+  "data": {
+    "W2": 0,
+    "PR_c": 0,
+    "Tt4": 0
+  }
+}

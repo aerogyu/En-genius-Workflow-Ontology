@@ -1,0 +1,17 @@
+{
+  "contract": "if-cycle-dp",
+  "version": "0.1.0",
+  "case": "골격",
+  "data": {
+    "OPR": 0,
+    "Tt4": 800.0,
+    "stations": [
+      {
+        "station": "",
+        "W": 0,
+        "Pt": 0,
+        "Tt": 0
+      }
+    ]
+  }
+}

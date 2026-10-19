@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://en-genius.local/schema/if-cmp-map/0.1.0.json",
+  "title": "압축기 특성 맵 0.1.0",
+  "x-interface": {
+    "key": "if-cmp-map",
+    "version": "0.1.0",
+    "iri": "http://en-genius.local/id/IFC-000002"
+  },
+  "type": "object",
+  "required": [
+    "contract",
+    "version",
+    "data"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "if-cmp-map"
+    },
+    "version": {
+      "const": "0.1.0"
+    },
+    "produced_by": {
+      "type": "string",
+      "description": "만든 단계 key"
+    },
+    "case": {
+      "type": "string",
+      "description": "사례 이름 (자유)"
+    },
+    "iteration": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "루프 반복 회차 — 0 = 첫 바퀴 가정값(Loop.initial)"
+    },
+    "data": {
+      "$ref": "#/$defs/_data"
+    }
+  },
+  "$defs": {
+    "_data": {
+      "type": "object",
+      "title": "압축기 특성 맵",
+      "properties": {
+        "speed_lines": {
+          "title": "속도선",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SpeedLine"
+          },
+          "minItems": 2
+        },
+        "surge_margin": {
+          "title": "설계점 서지 마진",
+          "x-unit": "%",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/PERCENT",
+          "description": "[%]",
+          "type": "number"
+        },
+        "map_file": {
+          "title": "맵 파일",
+          "type": "string",
+          "pattern": "\\.([cC][sS][vV]|[tT][xX][tT])$"
+        },
+        "map_source": {
+          "title": "맵 출처",
+          "type": "string",
+          "enum": [
+            "1D 상관식",
+            "3D CFD",
+            "시험"
+          ]
+        }
+      },
+      "required": [
+        "speed_lines",
+        "surge_margin",
+        "map_source"
+      ],
+      "additionalProperties": false
+    },
+    "SpeedLine": {
+      "type": "object",
+      "title": "속도선",
+      "properties": {
+        "N_rel": {
+          "title": "상대 수정 회전수",
+          "x-unit": "%",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/PERCENT",
+          "description": "[%]",
+          "type": "number"
+        },
+        "points": {
+          "title": "맵 점",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MapPoint"
+          },
+          "minItems": 3
+        }
+      },
+      "required": [
+        "N_rel",
+        "points"
+      ],
+      "additionalProperties": false
+    },
+    "MapPoint": {
+      "type": "object",
+      "title": "맵 한 점",
+      "properties": {
+        "W_corr": {
+          "title": "수정 유량",
+          "x-unit": "kg/s",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/KiloGM-PER-SEC",
+          "description": "[kg/s]",
+          "type": "number"
+        },
+        "PR": {
+          "title": "압력비",
+          "x-unit": "1",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/UNITLESS",
+          "description": "[1]",
+          "type": "number"
+        },
+        "eta": {
+          "title": "단열효율",
+          "x-unit": "1",
+          "x-qudt-unit": "http://qudt.org/vocab/unit/UNITLESS",
+          "description": "[1]",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      },
+      "required": [
+        "W_corr",
+        "PR",
+        "eta"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

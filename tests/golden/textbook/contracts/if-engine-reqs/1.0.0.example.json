@@ -1,0 +1,10 @@
+{
+  "contract": "if-engine-reqs",
+  "version": "1.0.0",
+  "case": "골격",
+  "data": {
+    "Fn_TO": 0,
+    "alt": 0,
+    "Mach": 0
+  }
+}

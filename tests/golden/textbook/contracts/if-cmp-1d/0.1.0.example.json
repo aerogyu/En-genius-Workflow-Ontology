@@ -1,0 +1,12 @@
+{
+  "contract": "if-cmp-1d",
+  "version": "0.1.0",
+  "case": "골격",
+  "data": {
+    "n_stages": 0,
+    "PR_c": 0,
+    "eta_is": 0.0,
+    "N_mech": 0,
+    "flowpath": "example.csv"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "contract": "if-perf-od",
+  "version": "0.1.0",
+  "case": "골격",
+  "data": {
+    "N_rel": 0,
+    "W2R": 0,
+    "PR_c": 0,
+    "mismatch": 0
+  }
+}

@@ -1,0 +1,87 @@
+{
+ "short": {
+  "q01": [
+   ["cmp-meanline", "perf-cycle"]
+  ],
+  "q02": [
+   ["perf-cycle", "GasTurb", "cmp-meanline", "Excel", "if-cycle-dp"]
+  ],
+  "q03": [
+   ["loop-cmp-match", "cmp-meanline", "if-cmp-map", ""],
+   ["loop-cmp-match", "perf-cycle", "if-cmp-map", ""]
+  ],
+  "q04": [],
+  "q05": [
+   ["perf-cycle", "cmp-meanline", "if-cycle-dp"]
+  ],
+  "q06": [
+   ["unit:K", "1"],
+   ["unit:KiloGM-PER-SEC", "1"],
+   ["unit:PERCENT", "1"],
+   ["unit:UNITLESS", "2"]
+  ]
+ },
+ "textbook": {
+  "q01": [
+   ["cmp-cfd-check", "cmp-meanline"],
+   ["cmp-cfd-solve", "cmp-cfd-mesh"],
+   ["cmp-map", "cmp-meanline"],
+   ["cmp-meanline", "perf-cycle-dp"],
+   ["perf-offdesign", "cmp-map"],
+   ["perf-offdesign", "perf-cycle-dp"]
+  ],
+  "q02": [
+   ["perf-cycle-dp", "GasTurb", "cmp-meanline", "Excel", "if-cycle-dp"],
+   ["perf-offdesign", "GasTurb", "cmp-meanline", "Excel", "if-perf-od"]
+  ],
+  "q03": [
+   ["loop-cmp-match", "cmp-map", "if-perf-od", "cmp-cfd-check"],
+   ["loop-cmp-match", "cmp-meanline", "if-perf-od", "cmp-cfd-check"],
+   ["loop-cmp-match", "perf-offdesign", "if-perf-od", "cmp-cfd-check"]
+  ],
+  "q04": [
+   ["cmp-meanline"],
+   ["perf-cycle-dp"]
+  ],
+  "q05": [
+   ["cmp-map", "perf-offdesign", "if-cmp-map"],
+   ["perf-cycle-dp", "cmp-meanline", "if-cycle-dp"]
+  ],
+  "q06": [
+   ["unit:K", "2"],
+   ["unit:KiloGM-PER-SEC", "3"],
+   ["unit:KiloN", "1"],
+   ["unit:KiloPA", "1"],
+   ["unit:M", "1"],
+   ["unit:PERCENT", "4"],
+   ["unit:REV-PER-MIN", "1"],
+   ["unit:UNITLESS", "11"]
+  ]
+ },
+ "textbook_cross": {
+  "q07": [
+   ["axstream", "TOOL-900002", "AxSTREAM", "활성"],
+   ["cfx", "", "", ""],
+   ["excel", "TOOL-000002", "Excel", "활성"],
+   ["gasturb", "TOOL-900005", "GasTurb 13", "통합됨"],
+   ["meanline-py", "", "", ""],
+   ["turbogrid", "", "", ""]
+  ],
+  "q08": [
+   ["cmp-meanline", "if-cycle-dp", "USE-000002", "모름", "csv", "메일·수기 전달"],
+   ["cmp-meanline", "if-cycle-dp", "USE-000002", "모름", "xlsx", "파일 저장"],
+   ["cmp-meanline", "if-cycle-dp", "USE-000012", "COM·OLE", "xlsx", "파일 저장"],
+   ["cmp-meanline", "if-cycle-dp", "USE-000017", "COM·OLE", "xlsx", "파일 저장"],
+   ["cmp-meanline", "if-cycle-dp", "USE-000021", "COM·OLE", "xlsx", "파일 저장"],
+   ["cmp-meanline", "if-cycle-dp", "USE-000034", "COM·OLE", "xlsx", "파일 저장"],
+   ["cmp-meanline", "if-cycle-dp", "USE-000035", "COM·OLE", "xlsx", "파일 저장"],
+   ["cmp-meanline", "if-perf-od", "USE-000002", "모름", "csv", "메일·수기 전달"],
+   ["cmp-meanline", "if-perf-od", "USE-000002", "모름", "xlsx", "파일 저장"],
+   ["cmp-meanline", "if-perf-od", "USE-000012", "COM·OLE", "xlsx", "파일 저장"],
+   ["cmp-meanline", "if-perf-od", "USE-000017", "COM·OLE", "xlsx", "파일 저장"],
+   ["cmp-meanline", "if-perf-od", "USE-000021", "COM·OLE", "xlsx", "파일 저장"],
+   ["cmp-meanline", "if-perf-od", "USE-000034", "COM·OLE", "xlsx", "파일 저장"],
+   ["cmp-meanline", "if-perf-od", "USE-000035", "COM·OLE", "xlsx", "파일 저장"]
+  ]
+ }
+}

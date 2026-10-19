@@ -1,0 +1,10 @@
+[경고 X02] _plan.yaml 23행  툴 'gasturb' 의 TOOL-900005 는 TOOL-900001(GasTurb) 로 통합됨
+        → tool_id 를 TOOL-900001 로 바꾸고 label_at_link 도 갱신
+[참고 D07] 전체  전달 방법(transfer)을 안 적은 입력 3건 — Tool Agent 후보(수기 구간)를 찾으려면 적어 주세요
+        → 수기 = 메일·수기 전달
+[참고 L08] perf.yaml 57행  루프 'loop-cmp-match': 몸통 ['cmp-map', 'cmp-meanline', 'perf-offdesign'] · 나르는 데이터 ['if-perf-od'] · 수렴 뒤 단계 ['cmp-cfd-check']
+[참고 U03] 전체  단위 별칭 '퍼센트' 를 '%' 로 읽음 (4곳)
+[참고 X05] _plan.yaml 26행  툴 'turbogrid'(ANSYS TurboGrid) 이 Tool 온톨로지에 없다 — 조사 누락 후보
+[참고 X04] _plan.yaml 27행  툴 'cfx' 미연결 — 같은 이름의 Tool 온톨로지 툴: TOOL-900003
+        → 맞으면 tool_id 에 적는다 (사람이 판정)
+== 오류 0 · 경고 1 · 참고 5
