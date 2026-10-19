@@ -21,9 +21,14 @@ wf:Discipline   rdfs:subClassOf skos:Concept .
 wf:Component    rdfs:subClassOf skos:Concept .
 wf:InterfaceRelease rdfs:subClassOf prov:Entity .
 
-# 지름길 — P-Plan 경로(Step → Variable → conformsTo → Interface)를 한 번에
-wf:consumes rdfs:comment "= p-plan:hasInputVar ∪ wf:loopInputVar 를 거쳐 dcterms:conformsTo 의 지름길"@ko .
-wf:produces rdfs:comment "= ^p-plan:isOutputVarOf / dcterms:conformsTo 의 지름길"@ko .
+# 지름길 — P-Plan 경로(Step → Variable → conformsTo → Interface)를 한 번에.
+# 하위 단계가 있는 상위 단계(MultiStep)의 produces·consumes 는 경계 표시(하위 단계들이 주고받는 것 중 묶음 밖과 오가는 것)라
+# P-Plan 경로와 같지 않을 수 있다 — isOutputVarOf 는 실제로 만드는 가장 깊은 단계 하나에만 단다.
+wf:consumes rdfs:comment "단계가 받는 계약의 지름길 = (p-plan:hasInputVar ∪ wf:loopInputVar) / dcterms:conformsTo. 상위 단계(MultiStep)에 적힌 입력은 경계 표시."@ko .
+wf:produces rdfs:comment "단계가 내놓는 계약의 지름길 — 하위 단계가 없는 단계에서는 ^p-plan:isOutputVarOf / dcterms:conformsTo 와 같다. 상위 단계(MultiStep)에서는 경계 표시 (하위 단계가 만든 것을 묶음 밖으로 내놓음)."@ko .
+
+# 하위 계획 — 상위 단계 isDecomposedAsPlan 하위 계획, 하위 계획 isSubPlanOfPlan 상위 계획 (빌드가 둘 다 쓴다).
+# 워크플로의 모든 단계 = isStepOfPlan / isSubPlanOfPlan* 로 워크플로에 닿는 단계.
 
 # 루프로 되돌아오는 입력 — P-Plan 의 hasInputVar 로 적으면 P-Plan 변수 그래프가 순환이 된다 (standards·authoring 시안 실측).
 # 그래서 별도 속성으로 둔다. P-Plan 소비자에게 이 입력은 보이지 않는다(의도) — '이전 반복의 값'.

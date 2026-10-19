@@ -9,8 +9,8 @@ import copy
 import json
 
 import pytest
-from rdflib import Graph, URIRef
-from rdflib.namespace import OWL, RDF, RDFS
+from rdflib import Graph, Literal, URIRef
+from rdflib.namespace import OWL, RDF, RDFS, XSD
 
 from engenius_wf import schema_gen
 from engenius_wf.config import GEN_DIR, SCHEMA_FILE
@@ -48,13 +48,50 @@ def test_owl_classes(owl):
 
 def test_owl_external_vocab_untouched(gen, owl):
     """gen-owl 이 남의 어휘(P-Plan·PROV·SKOS…)에 쓴 트리플은 지우고, 정렬은 alignment.ttl 의 한 방향 공리만 (역방향 0)."""
-    assert gen[1] == 62
+    assert gen[1] == 66
     external = {(s, p, o) for s, p, o in owl if isinstance(s, URIRef) and not str(s).startswith(WF)
                 and not (p == RDF.type and o == OWL.Ontology)}
     assert external == set()
     assert (URIRef(WF + "Step"), RDFS.subClassOf, URIRef(PPLAN + "Step")) in owl
     assert (URIRef(PPLAN + "Step"), RDFS.subClassOf, URIRef(WF + "Step")) not in owl
     assert (URIRef(WF + "WorkflowFile"), None, None) not in owl
+
+
+def test_owl_single_ontology_header(owl):
+    """한 문서 = 온톨로지 머리 하나 (OWL 2 RDF 매핑 3.1.2) — alignment.ttl 의 머리는 떼고 주석만 wf: 머리로 (W1 검토 수리)."""
+    heads = {s for s in owl.subjects(RDF.type, OWL.Ontology) if (None, OWL.imports, s) not in owl}
+    assert heads == {URIRef(WF)}
+    assert any("정렬" in str(c) for c in owl.objects(URIRef(WF), RDFS.comment))
+
+
+def test_owl_no_annotation_property_restrictions(owl):
+    """OWL 내장·주석 속성(owl:versionInfo·rdfs:label·skos:notation …)은 클래스 제약에 쓰지 않는다 (OWL 2 DL)."""
+    for p in schema_gen.ANNOTATION_PROPS:
+        assert list(owl.subjects(OWL.onProperty, p)) == [], p
+
+
+def test_owl_iri_valued_properties_are_object_properties(owl):
+    """값이 IRI 인 속성은 객체 속성 — xsd:anyURI 필러 0, 데이터 속성에 클래스 필러 0 (W1 검토 수리)."""
+    assert list(owl.subjects(OWL.allValuesFrom, XSD.anyURI)) == [] and list(owl.subjects(OWL.someValuesFrom, XSD.anyURI)) == []
+    for name in ("ontoTool", "structRef"):
+        assert (URIRef(WF + name), RDF.type, OWL.ObjectProperty) in owl
+        assert (URIRef(WF + name), RDF.type, OWL.DatatypeProperty) not in owl
+    datatype = set(owl.subjects(RDF.type, OWL.DatatypeProperty))
+    for r in owl.subjects(OWL.onProperty, None):
+        p, filler = owl.value(r, OWL.onProperty), owl.value(r, OWL.allValuesFrom) or owl.value(r, OWL.someValuesFrom)
+        if p in datatype and filler is not None:
+            assert (filler, RDF.type, OWL.Class) not in owl and (filler, OWL.unionOf, None) not in owl, (p, filler)
+
+
+@pytest.mark.parametrize("name", ["short", "textbook_nocat"])
+def test_owl_property_kinds_match_data(built, owl, name):
+    """빌드 출력(작성 ∪ 파생)과 OWL 선언이 맞는다 — 데이터 속성 값에 IRI 0, 객체 속성 값에 리터럴 0."""
+    data = built[name].union()
+    datatype = set(owl.subjects(RDF.type, OWL.DatatypeProperty))
+    objprop = set(owl.subjects(RDF.type, OWL.ObjectProperty))
+    bad = {(str(p), type(o).__name__) for _, p, o in data
+           if (p in datatype and not isinstance(o, Literal)) or (p in objprop and isinstance(o, Literal))}
+    assert bad == set()
 
 
 def test_shacl_has_no_yaml_container():

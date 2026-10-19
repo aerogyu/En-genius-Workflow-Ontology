@@ -58,7 +58,7 @@
     },
     "output_of": {
      "built": false,
-     "multivalued": true,
+     "multivalued": false,
      "range": "Step",
      "required": false,
      "uri": "http://purl.org/net/p-plan#isOutputVarOf"
@@ -735,6 +735,13 @@
      "range": "string",
      "required": true,
      "uri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "sub_plan_of": {
+     "built": true,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://purl.org/net/p-plan#isSubPlanOfPlan"
     }
    },
    "uri": "http://en-genius.local/onto/wf/SubPlan"

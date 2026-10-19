@@ -12,10 +12,6 @@
 @prefix wf: <http://en-genius.local/onto/wf/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-wf:alignment a owl:Ontology ;
-    rdfs:comment "En-Genius 워크플로 온톨로지 → P-Plan·PROV-O·SKOS 정렬 (한 방향)."@ko ;
-    owl:versionInfo "0.1.0" .
-
 wf:component a owl:ObjectProperty ;
     rdfs:label "components" ;
     rdfs:range wf:Component ;
@@ -123,9 +119,6 @@ wf:InterfaceRelease a owl:Class ;
         [ a owl:Restriction ;
             owl:cardinality 1 ;
             owl:onProperty dcterms:isVersionOf ],
-        [ a owl:Restriction ;
-            owl:cardinality 1 ;
-            owl:onProperty owl:versionInfo ],
         [ a owl:Restriction ;
             owl:allValuesFrom wf:Interface ;
             owl:onProperty dcterms:isVersionOf ],
@@ -236,7 +229,7 @@ wf:carries a owl:ObjectProperty ;
 
 wf:consumes a owl:ObjectProperty ;
     rdfs:label "consumes" ;
-    rdfs:comment "= p-plan:hasInputVar ∪ wf:loopInputVar 를 거쳐 dcterms:conformsTo 의 지름길"@ko ;
+    rdfs:comment "단계가 받는 계약의 지름길 = (p-plan:hasInputVar ∪ wf:loopInputVar) / dcterms:conformsTo. 상위 단계(MultiStep)에 적힌 입력은 경계 표시."@ko ;
     skos:definition "(빌드) 받는 계약 지름길." ;
     skos:inScheme wf: .
 
@@ -281,9 +274,15 @@ wf:monitorItem a owl:DatatypeProperty ;
     skos:definition "수렴을 지켜보는 항목 '계약key.항목' (빌드가 있는지 검사)." ;
     skos:inScheme wf: .
 
+wf:ontoTool a owl:ObjectProperty ;
+    rdfs:label "onto_tool" ;
+    rdfs:comment "Tool 온톨로지 eg:Tool IRI (egid:TOOL-…) — 그쪽 노드에 타입·라벨을 쓰지 않는다."@ko ;
+    skos:definition "(빌드) tool_id 를 IRI 로 (egid:TOOL-…)." ;
+    skos:inScheme wf: .
+
 wf:produces a owl:ObjectProperty ;
     rdfs:label "produces" ;
-    rdfs:comment "= ^p-plan:isOutputVarOf / dcterms:conformsTo 의 지름길"@ko ;
+    rdfs:comment "단계가 내놓는 계약의 지름길 — 하위 단계가 없는 단계에서는 ^p-plan:isOutputVarOf / dcterms:conformsTo 와 같다. 상위 단계(MultiStep)에서는 경계 표시 (하위 단계가 만든 것을 묶음 밖으로 내놓음)."@ko ;
     skos:definition "(빌드) 내놓는 계약 지름길." ;
     skos:inScheme wf: .
 
@@ -419,9 +418,6 @@ wf:InterfaceItem a owl:Class ;
         [ a owl:Restriction ;
             owl:maxCardinality 1 ;
             owl:onProperty wf:maximum ],
-        [ a owl:Restriction ;
-            owl:allValuesFrom xsd:anyURI ;
-            owl:onProperty qudt:hasUnit ],
         [ a owl:Restriction ;
             owl:allValuesFrom xsd:string ;
             owl:onProperty wf:allowedValue ],
@@ -586,12 +582,6 @@ wf:notInSurvey a owl:DatatypeProperty ;
     skos:definition "조사에 없는 툴이면 그 사유 (예 개인 스크립트)." ;
     skos:inScheme wf: .
 
-wf:ontoTool a owl:DatatypeProperty ;
-    rdfs:label "onto_tool" ;
-    rdfs:comment "Tool 온톨로지 eg:Tool IRI (egid:TOOL-…) — 그쪽 노드에 타입·라벨을 쓰지 않는다."@ko ;
-    skos:definition "(빌드) tool_id 를 IRI 로 (egid:TOOL-…)." ;
-    skos:inScheme wf: .
-
 wf:order a owl:DatatypeProperty ;
     rdfs:label "order" ;
     skos:definition "(빌드) 계약·묶음 안 순서 (1부터)." ;
@@ -627,7 +617,7 @@ wf:status a owl:DatatypeProperty ;
     skos:definition "작성 상태 (판정은 엔지니어)." ;
     skos:inScheme wf: .
 
-wf:structRef a owl:DatatypeProperty ;
+wf:structRef a owl:ObjectProperty ;
     rdfs:label "ref" ;
     skos:definition "type=struct 일 때 품는 것 — 같은 계약의 묶음 이름(SpeedLine) 또는 다른 계약 key." ;
     skos:inScheme wf: .
@@ -676,13 +666,6 @@ wf:Record a owl:Class ;
     skos:exactMatch wf:Record ;
     skos:inScheme wf: .
 
-wf:SubPlan a owl:Class ;
-    rdfs:label "SubPlan" ;
-    rdfs:subClassOf p-plan:Plan ;
-    skos:definition "(빌드) 하위 단계가 있는 단계를 펼친 하위 계획 (p-plan:isDecomposedAsPlan 의 대상)." ;
-    skos:exactMatch wf:SubPlan ;
-    skos:inScheme wf: .
-
 wf:ToolRef a owl:Class ;
     rdfs:label "ToolRef" ;
     rdfs:subClassOf [ a owl:Restriction ;
@@ -694,9 +677,6 @@ wf:ToolRef a owl:Class ;
         [ a owl:Restriction ;
             owl:maxCardinality 1 ;
             owl:onProperty wf:notInSurvey ],
-        [ a owl:Restriction ;
-            owl:allValuesFrom xsd:anyURI ;
-            owl:onProperty wf:ontoTool ],
         [ a owl:Restriction ;
             owl:allValuesFrom xsd:string ;
             owl:onProperty wf:labelAtLink ],
@@ -720,27 +700,6 @@ wf:ToolRef a owl:Class ;
     skos:exactMatch wf:ToolRef ;
     skos:inScheme wf: .
 
-wf:Workflow a owl:Class ;
-    rdfs:label "Workflow" ;
-    rdfs:subClassOf [ a owl:Restriction ;
-            owl:cardinality 1 ;
-            owl:onProperty wf:phase ],
-        [ a owl:Restriction ;
-            owl:allValuesFrom wf:DevPhase ;
-            owl:onProperty wf:phase ],
-        [ a owl:Restriction ;
-            owl:allValuesFrom [ a rdfs:Datatype ;
-                    owl:onDatatype xsd:string ;
-                    owl:withRestrictions ( [ xsd:pattern "[a-z][a-z0-9]*(-[a-z0-9]+)*" ] ) ] ;
-            owl:onProperty wf:renamedFrom ],
-        [ a owl:Restriction ;
-            owl:cardinality 1 ;
-            owl:onProperty owl:versionInfo ],
-        p-plan:Plan ;
-    skos:definition "워크플로 (예 개념설계). ⊑ p-plan:Plan ⊑ prov:Plan (alignment.ttl)." ;
-    skos:exactMatch wf:Workflow ;
-    skos:inScheme wf: .
-
 wf:DataVariable a owl:Class ;
     rdfs:label "DataVariable" ;
     rdfs:subClassOf [ a owl:Restriction ;
@@ -758,9 +717,43 @@ wf:DataVariable a owl:Class ;
         [ a owl:Restriction ;
             owl:allValuesFrom wf:Step ;
             owl:onProperty p-plan:isOutputVarOf ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty p-plan:isOutputVarOf ],
         p-plan:Variable ;
     skos:definition "(빌드) 워크플로 안의 데이터 1건 = (워크플로, 계약). ⊑ p-plan:Variable." ;
     skos:exactMatch wf:DataVariable ;
+    skos:inScheme wf: .
+
+wf:SubPlan a owl:Class ;
+    rdfs:label "SubPlan" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty p-plan:isSubPlanOfPlan ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ owl:unionOf ( wf:Workflow wf:SubPlan ) ] ;
+            owl:onProperty p-plan:isSubPlanOfPlan ],
+        p-plan:Plan ;
+    skos:definition "(빌드) 하위 단계가 있는 단계를 펼친 하위 계획 (p-plan:isDecomposedAsPlan 의 대상)." ;
+    skos:exactMatch wf:SubPlan ;
+    skos:inScheme wf: .
+
+wf:Workflow a owl:Class ;
+    rdfs:label "Workflow" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty wf:phase ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:DevPhase ;
+            owl:onProperty wf:phase ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[a-z][a-z0-9]*(-[a-z0-9]+)*" ] ) ] ;
+            owl:onProperty wf:renamedFrom ],
+        p-plan:Plan ;
+    skos:definition "워크플로 (예 개념설계). ⊑ p-plan:Plan ⊑ prov:Plan (alignment.ttl)." ;
+    skos:exactMatch wf:Workflow ;
     skos:inScheme wf: .
 
 wf:exchangeFormat a owl:DatatypeProperty ;
@@ -810,14 +803,6 @@ wf:Interface a owl:Class ;
         [ a owl:Restriction ;
             owl:maxCardinality 1 ;
             owl:onProperty wf:contractStatus ],
-        [ a owl:Restriction ;
-            owl:allValuesFrom [ a rdfs:Datatype ;
-                    owl:onDatatype xsd:string ;
-                    owl:withRestrictions ( [ xsd:pattern "[0-9]+\\.[0-9]+\\.[0-9]+" ] ) ] ;
-            owl:onProperty owl:versionInfo ],
-        [ a owl:Restriction ;
-            owl:cardinality 1 ;
-            owl:onProperty owl:versionInfo ],
         [ a owl:Restriction ;
             owl:minCardinality 1 ;
             owl:onProperty wf:hasItem ],
@@ -902,6 +887,7 @@ wf: a owl:Ontology ;
     dcterms:license "사내 전용 — 이 PC 에서는 공개 교과서 수준 예시만" ;
     dcterms:title "En-Genius 개념설계 워크플로 온톨로지 (최종 시안 v0.1)" ;
     pav:version "0.1.0" ;
+    rdfs:comment "En-Genius 워크플로 온톨로지 → P-Plan·PROV-O·SKOS 정렬 (한 방향)."@ko ;
     owl:versionInfo "0.1.0" ;
     skos:definition "개념설계 단계의 워크플로(단계·선후·병렬·반복 루프)와 단계 사이에 주고받는 데이터 계약(Interface)을 손으로 쓴 YAML 에서 만든다. 이 스키마 하나가 세 가지를 정한다 — ① YAML 파일의 모양 (gen-json-schema → 빌드 2층 모양 검사) ② RDF 의 술어 IRI (slot_uri → 빌드가 generated/terms.json 으로 읽음) ③ RDF 의 모양 (gen-shacl → Jena SHACL). '(빌드)' 표시 슬롯은 YAML 에 적지 않고 빌드가 계산해 RDF(derived 그래프)에 넣는다. 표준 정렬(P-Plan·PROV-O·SKOS)은 schema/alignment.ttl 에 한 방향 공리로만 둔다 (gen-owl 이 남의 어휘를 덮어쓰지 않게). ID: YAML 에서는 사람이 읽는 key 로 참조하고, RDF IRI 는 레지스트리가 주는 무의미 일련번호." .
 

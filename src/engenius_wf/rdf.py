@@ -4,6 +4,8 @@
 - 파생 그래프 D: 선후(p-plan:isPrecededBy — 되돌림 간선 제외, 늘 DAG)·P-Plan 이중 타입·변수(DataVariable)·
   루프 몸통·나르는 계약·수렴 뒤 단계·동결 기록(InterfaceRelease)·폐기 IRI(owl:deprecated)·PROV 빌드 기록.
 - 루프로 되돌아오는 입력은 p-plan:hasInputVar 가 아니라 wf:loopInputVar (P-Plan 변수 그래프를 DAG 로).
+- 하위 계획(SubPlan)은 p-plan:isSubPlanOfPlan 으로 상위 계획(워크플로 또는 위 하위 계획)에 잇는다.
+  상위 단계(MultiStep)의 wf:produces·consumes 는 경계 표시 — isOutputVarOf 는 가장 깊은 단계 하나에만.
 - 변수·바인딩·항목·묶음·하위 계획 IRI 는 레지스트리 ID 에서 해시로 (재빌드해도 같은 IRI).
 """
 
@@ -76,14 +78,12 @@ def write_rdf(m, flow, ids, deprecated, units, rel_all, sources, T: Terms, cat):
         if o.get("tool_id"):
             D.add((I(k), T.uri("ToolRef", "onto_tool"), EGID[o["tool_id"]]))
     # 하위 계획
-    subplan = {}
-    for p, kids in flow["children"].items():
-        if p is None:
-            continue
-        sp = EGID["SPLAN-" + h10(ids[p])]
-        subplan[p] = sp
+    subplan = {p: EGID["SPLAN-" + h10(ids[p])] for p in flow["children"] if p is not None}
+    for p, sp in subplan.items():
         D.add((sp, RDF.type, T.curi("SubPlan"))); D.add((sp, RDF.type, PPLAN.Plan))  # noqa: E702
         D.add((sp, RDFS.label, ko(m["step"][p]["label"] + " (하위 계획)"))); D.add((sp, SKOS.notation, Literal(p + "-sub")))  # noqa: E702
+        up = m["step"][p].get("part_of")                       # 상위 단계가 속한 계획 — P-Plan 소비자가 계획 나무를 따라가게
+        D.add((sp, T.uri("SubPlan", "sub_plan_of"), subplan[up] if up else plan))
     # 변수 (워크플로, 계약)
     var = {}
     for ik in m["interface"]:

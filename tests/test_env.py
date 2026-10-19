@@ -32,5 +32,5 @@ def test_build_with_utf8_mode_off_and_cp949_pipe(tmp_path):
                        + (["--catalog", *cats] if cats else []), capture_output=True, cwd=tmp_path, env=env)
     assert p.returncode == 0, p.stderr.decode("cp949", errors="replace")[-800:]
     text = p.stdout.decode("cp949", errors="replace")
-    assert "TTL: 작성 427 + 파생 221 트리플" in text
+    assert "TTL: 작성 427 + 파생 222 트리플" in text
     assert (tmp_path / "out" / "report.txt").read_text(encoding="utf-8").endswith("\n")

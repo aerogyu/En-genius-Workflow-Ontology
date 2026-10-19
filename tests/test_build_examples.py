@@ -25,8 +25,8 @@ def _get(built, name):
 
 @pytest.mark.parametrize("name, n_auth, n_der, n_step, n_ifc, n_loop", [
     ("short", 104, 64, 2, 2, 1),
-    ("textbook_nocat", 427, 221, 7, 7, 1),
-    ("textbook", 427, 221, 7, 7, 1),
+    ("textbook_nocat", 427, 222, 7, 7, 1),
+    ("textbook", 427, 222, 7, 7, 1),
 ])
 def test_triple_counts(built, name, n_auth, n_der, n_step, n_ifc, n_loop):
     b = _get(built, name)

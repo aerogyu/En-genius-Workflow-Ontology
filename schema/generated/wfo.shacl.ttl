@@ -442,7 +442,13 @@ wf:SubPlan a sh:NodeShape ;
     rdfs:comment "(빌드) 하위 단계가 있는 단계를 펼친 하위 계획 (p-plan:isDecomposedAsPlan 의 대상)." ;
     sh:closed true ;
     sh:ignoredProperties ( rdf:type ) ;
-    sh:property [ sh:datatype xsd:string ;
+    sh:property [ sh:description "(빌드) 상위 계획 — 상위 단계가 속한 계획 (최상위 단계면 워크플로, 하위 단계면 그 상위의 하위 계획)." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:or ( [ sh:class wf:Workflow ] [ sh:class wf:SubPlan ] ) ;
+            sh:order 2 ;
+            sh:path p-plan:isSubPlanOfPlan ],
+        [ sh:datatype xsd:string ;
             sh:description "사람이 읽는 참조 키 (영문 소문자·숫자·하이픈). YAML 안 참조에만 쓰고 RDF IRI 는 레지스트리가 준다." ;
             sh:maxCount 1 ;
             sh:nodeKind sh:Literal ;
@@ -458,52 +464,6 @@ wf:SubPlan a sh:NodeShape ;
             sh:order 1 ;
             sh:path rdfs:label ] ;
     sh:targetClass wf:SubPlan .
-
-wf:Workflow a sh:NodeShape ;
-    rdfs:comment "워크플로 (예 개념설계). ⊑ p-plan:Plan ⊑ prov:Plan (alignment.ttl)." ;
-    sh:closed true ;
-    sh:ignoredProperties ( rdf:type ) ;
-    sh:property [ sh:datatype xsd:string ;
-            sh:description "메모 (자유 텍스트 — 인명 금지, 빌드가 인명 유사 표기를 경고)." ;
-            sh:maxCount 1 ;
-            sh:nodeKind sh:Literal ;
-            sh:order 2 ;
-            sh:path skos:note ],
-        [ sh:description "개발 단계." ;
-            sh:in ( "개념설계" "기본설계" "상세설계" ) ;
-            sh:maxCount 1 ;
-            sh:minCount 1 ;
-            sh:order 5 ;
-            sh:path wf:phase ],
-        [ sh:datatype xsd:string ;
-            sh:description "판." ;
-            sh:maxCount 1 ;
-            sh:minCount 1 ;
-            sh:nodeKind sh:Literal ;
-            sh:order 4 ;
-            sh:path owl:versionInfo ],
-        [ sh:datatype xsd:string ;
-            sh:description "사람이 읽는 참조 키 (영문 소문자·숫자·하이픈). YAML 안 참조에만 쓰고 RDF IRI 는 레지스트리가 준다." ;
-            sh:maxCount 1 ;
-            sh:nodeKind sh:Literal ;
-            sh:order 0 ;
-            sh:path skos:notation ;
-            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ],
-        [ sh:datatype rdf:langString ;
-            sh:description "한국어 이름 (RDF 에서 @ko)." ;
-            sh:languageIn ( "ko" ) ;
-            sh:maxCount 1 ;
-            sh:minCount 1 ;
-            sh:nodeKind sh:Literal ;
-            sh:order 1 ;
-            sh:path rdfs:label ],
-        [ sh:datatype xsd:string ;
-            sh:description "예전 key — 적으면 key 를 바꿔도 IRI 가 유지된다 (레지스트리가 옛 key 행을 이어받음)." ;
-            sh:nodeKind sh:Literal ;
-            sh:order 3 ;
-            sh:path wf:renamedFrom ;
-            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ] ;
-    sh:targetClass wf:Workflow .
 
 wf:ToolRef a sh:NodeShape ;
     rdfs:comment "이 워크플로의 툴 이름표. 단계는 key 로 부르고, Tool 온톨로지 TOOL ID 는 여기 한 곳에만 사람이 적는다 (link-tools 가 후보만 제안 — HITL). 빌드는 --catalog 로 받은 survey.ttl 과 교차 확인만 한다." ;
@@ -562,22 +522,69 @@ wf:ToolRef a sh:NodeShape ;
             sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ] ;
     sh:targetClass wf:ToolRef .
 
+wf:Workflow a sh:NodeShape ;
+    rdfs:comment "워크플로 (예 개념설계). ⊑ p-plan:Plan ⊑ prov:Plan (alignment.ttl)." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:description "메모 (자유 텍스트 — 인명 금지, 빌드가 인명 유사 표기를 경고)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 2 ;
+            sh:path skos:note ],
+        [ sh:description "개발 단계." ;
+            sh:in ( "개념설계" "기본설계" "상세설계" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:order 5 ;
+            sh:path wf:phase ],
+        [ sh:datatype xsd:string ;
+            sh:description "판." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 4 ;
+            sh:path owl:versionInfo ],
+        [ sh:datatype xsd:string ;
+            sh:description "사람이 읽는 참조 키 (영문 소문자·숫자·하이픈). YAML 안 참조에만 쓰고 RDF IRI 는 레지스트리가 준다." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 0 ;
+            sh:path skos:notation ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ],
+        [ sh:datatype rdf:langString ;
+            sh:description "한국어 이름 (RDF 에서 @ko)." ;
+            sh:languageIn ( "ko" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:description "예전 key — 적으면 key 를 바꿔도 IRI 가 유지된다 (레지스트리가 옛 key 행을 이어받음)." ;
+            sh:nodeKind sh:Literal ;
+            sh:order 3 ;
+            sh:path wf:renamedFrom ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ] ;
+    sh:targetClass wf:Workflow .
+
 wf:DataVariable a sh:NodeShape ;
     rdfs:comment "(빌드) 워크플로 안의 데이터 1건 = (워크플로, 계약). ⊑ p-plan:Variable." ;
     sh:closed true ;
     sh:ignoredProperties ( rdf:type ) ;
-    sh:property [ sh:class wf:Interface ;
+    sh:property [ sh:class wf:Step ;
+            sh:description "실제로 만드는 단계 하나 (결정 Q2 — 둘이면 빌드 D01 오류, SHACL maxCount 1. 하위 단계가 있으면 가장 깊은 단계 — 상위 단계 선언은 경계 표시)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 3 ;
+            sh:path p-plan:isOutputVarOf ],
+        [ sh:class wf:Interface ;
             sh:description "이 변수가 따르는 데이터 계약." ;
             sh:maxCount 1 ;
             sh:minCount 1 ;
             sh:nodeKind sh:IRI ;
             sh:order 1 ;
             sh:path dcterms:conformsTo ],
-        [ sh:class wf:Step ;
-            sh:description "실제로 만드는 단계 (하위 단계가 있으면 가장 깊은 단계 하나 — 상위 단계 선언은 경계 표시)." ;
-            sh:nodeKind sh:IRI ;
-            sh:order 3 ;
-            sh:path p-plan:isOutputVarOf ],
         [ sh:datatype rdf:langString ;
             sh:description "한국어 이름 (RDF 에서 @ko)." ;
             sh:languageIn ( "ko" ) ;

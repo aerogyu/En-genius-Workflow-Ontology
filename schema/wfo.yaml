@@ -459,6 +459,14 @@ classes:
     class_uri: wf:SubPlan
     description: (빌드) 하위 단계가 있는 단계를 펼친 하위 계획 (p-plan:isDecomposedAsPlan 의 대상).
     slots: [key, label]
+    attributes:
+      sub_plan_of:
+        slot_uri: p-plan:isSubPlanOfPlan
+        required: true
+        any_of:
+          - range: Workflow
+          - range: SubPlan
+        description: (빌드) 상위 계획 — 상위 단계가 속한 계획 (최상위 단계면 워크플로, 하위 단계면 그 상위의 하위 계획).
 
   DataVariable:
     class_uri: wf:DataVariable
@@ -478,8 +486,9 @@ classes:
       output_of:
         slot_uri: p-plan:isOutputVarOf
         range: Step
-        multivalued: true
-        description: 실제로 만드는 단계 (하위 단계가 있으면 가장 깊은 단계 하나 — 상위 단계 선언은 경계 표시).
+        description: >-
+          실제로 만드는 단계 하나 (결정 Q2 — 둘이면 빌드 D01 오류, SHACL maxCount 1. 하위 단계가 있으면 가장 깊은 단계 —
+          상위 단계 선언은 경계 표시).
 
   InterfaceRelease:
     class_uri: wf:InterfaceRelease

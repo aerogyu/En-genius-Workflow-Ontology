@@ -50,3 +50,19 @@ def test_injected_faults_detected(built, jena):
                                 ("inptus", "ClosedConstraintComponent"), ("label", "MinCountConstraintComponent"),
                                 ("transfer", "InConstraintComponent")]
     assert len(res) == 7
+
+
+def test_variable_has_one_producer_and_subplan_has_parent(built, jena):
+    """W1 검토 수리 — 변수의 생산 단계는 하나(isOutputVarOf maxCount 1, 결정 Q2)·하위 계획은 상위 계획에 매인다(isSubPlanOfPlan).
+    빌드는 D01 로 막지만, levels 로 D01 을 낮추거나 다른 경로로 들어온 데이터도 SHACL 이 잡는다."""
+    pp = "http://purl.org/net/p-plan#"
+    g = built["textbook_nocat"].union()
+    assert len(list(g.subject_objects(URIRef(pp + "isSubPlanOfPlan")))) == 1
+    var, prod = next(g.subject_objects(URIRef(pp + "isOutputVarOf")))
+    steps = list(g.subjects(RDF.type, URIRef(WF + "Step")))
+    g.add((var, URIRef(pp + "isOutputVarOf"), next(s for s in steps if s != prod)))      # 1 생산 단계 둘
+    sp = next(g.subjects(RDF.type, URIRef(WF + "SubPlan")))
+    g.remove((sp, URIRef(pp + "isSubPlanOfPlan"), None))                                  # 2 상위 계획 없음
+    conf, res = shacl(g, *jena)
+    assert conf == [False]
+    assert sorted(set(res)) == [("isOutputVarOf", "MaxCountConstraintComponent"), ("isSubPlanOfPlan", "MinCountConstraintComponent")]

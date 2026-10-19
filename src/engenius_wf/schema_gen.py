@@ -10,8 +10,11 @@ LinkML 스키마(schema/wfo.yaml)가 마스터다. **linkml 은 이 모듈에서
 --check: 다시 만들어 보고 지금 파일과 다르면 rc 1 (드리프트 감시).
 
 LinkML 생성기 함정 정리: gen-owl 이 남의 어휘(외부 이름공간 주어)에 트리플을 써서 라벨을 덮어쓰거나 역방향 subClassOf 를
-만든다 → 외부 주어 트리플 제거 + 정렬은 alignment.ttl 한 방향 공리로만. 이름 속성은 OWL 2 주석 속성 → 클래스 제약에서 뺀다.
-선택지 = 이름 있는 데이터타입. xsd:pattern 앵커 제거. 열린 루트(WorkflowFile — YAML 용기)는 OWL·SHACL 에서 뺀다.
+만든다 → 외부 주어 트리플 제거 + 정렬은 alignment.ttl 한 방향 공리로만. 이름 속성·owl:versionInfo 는 OWL 2 주석 속성 → 클래스
+제약에서 뺀다 (판 형식·필수는 SHACL 이 검사). 선택지 = 이름 있는 데이터타입. xsd:pattern 앵커 제거. 열린 루트(WorkflowFile — YAML
+용기)는 OWL·SHACL 에서 뺀다. 값이 IRI 인 속성(range uriorcurie → gen-owl 은 xsd:anyURI 데이터 속성, any_of 클래스 → default_range
+string 데이터 속성)은 객체 속성으로 바꾸고 xsd:anyURI 제약을 지운다 (OWL 2 DL — 데이터 속성 값에 IRI 불가).
+alignment.ttl 은 머리(owl:Ontology)를 떼고 합친다 — 한 파일에 온톨로지 머리는 wf: 하나 (주석은 wf: 머리로 옮김).
 gen-owl·gen-shacl 은 실행마다 Turtle 줄 순서가 바뀌므로 빈 노드를 정규화(to_canonical_graph)해 직렬화한다.
 """
 
@@ -37,6 +40,8 @@ SH = Namespace("http://www.w3.org/ns/shacl#")
 WFNS = "http://en-genius.local/onto/wf/"
 BANNER = "# 자동 생성 — 직접 고치지 말 것. 원본: schema/wfo.yaml (+ alignment.ttl), 명령: python -m engenius_wf schema\n"
 LABEL_PROPS = (RDFS.label,)
+# OWL 2 주석 속성으로 쓰는 slot_uri — 클래스 제약(owl:onProperty)에 둘 수 없다
+ANNOTATION_PROPS = LABEL_PROPS + (SKOS.notation, SKOS.note, SKOS.definition, SKOS.broader, OWL.versionInfo)
 FILES = ("lint.txt", "wfo_file.schema.json", "wfo.shacl.ttl", "wfo.owl.ttl", "terms.json")
 
 
@@ -107,12 +112,11 @@ def build_owl() -> tuple[str, int]:
         if isinstance(s, URIRef) and not str(s).startswith(WFNS) and not (p == RDF.type and o == OWL.Ontology):
             g.remove((s, p, o))
             removed += 1
-    # 정리 2: 이름 속성은 OWL 2 주석 속성 — 클래스 제약에서 뺀다 (형제 저장소 _owl_dl_tidy 1번)
-    for p in LABEL_PROPS + (SKOS.notation, SKOS.note, SKOS.definition, SKOS.broader):
+    # 정리 2: 이름 속성·owl:versionInfo 는 OWL 2 주석 속성 — 클래스 제약에서 뺀다 (형제 저장소 _owl_dl_tidy 1번).
+    #         owl:versionInfo 는 OWL 내장 주석 속성이라 owl:onProperty 에 두면 OWL 2 DL 위반 (판 필수·형식은 SHACL 이 검사)
+    for p in ANNOTATION_PROPS:
         for r in list(g.subjects(OWL.onProperty, p)):
-            for s2, p2 in list(g.subject_predicates(r)):
-                g.remove((s2, p2, r))
-            _drop_node(g, r)
+            _drop_restriction(g, r)
     # 정리 3: 선택지 = 이름 있는 데이터타입 (형제 저장소 _owl_dl_tidy 2번)
     enums = {e for e in g.subjects(RDF.type, RDFS.Datatype) if (e, OWL.oneOf, None) in g}
     for e in enums:
@@ -128,6 +132,26 @@ def build_owl() -> tuple[str, int]:
              {p for p, e in g.subject_objects(RDFS.range) if e in enums}:
         g.remove((p, RDF.type, OWL.ObjectProperty))
         g.add((p, RDF.type, OWL.DatatypeProperty))
+    # 정리 3b: 값이 IRI 인 속성 = 객체 속성. gen-owl 은 range uriorcurie 를 xsd:anyURI 데이터 속성으로(wf:ontoTool, qudt:hasUnit),
+    #          any_of 클래스 슬롯을 default_range string 데이터 속성으로(wf:structRef) 선언한다 — 데이터는 IRI 라 OWL 2 DL 위반.
+    #          xsd:anyURI 제약은 지우고(값은 IRI 이지 anyURI 리터럴이 아니다), 클래스 필러가 있는 속성은 객체 속성으로 바꾼다.
+    #          외부 속성(qudt:hasUnit·p-plan:isStepOfPlan 등)은 정리 1 로 선언이 없으니 제약만 손본다.
+    obj_props = set()
+    for r in list(g.subjects(OWL.onProperty, None)):
+        p = g.value(r, OWL.onProperty)
+        filler = g.value(r, OWL.allValuesFrom) or g.value(r, OWL.someValuesFrom)
+        if filler == XSD.anyURI:
+            obj_props.add(p)
+            _drop_restriction(g, r)
+        elif filler is not None and _is_class_expr(g, filler):
+            obj_props.add(p)
+    for p in obj_props:
+        if (p, RDF.type, OWL.DatatypeProperty) in g:
+            g.remove((p, RDF.type, OWL.DatatypeProperty))
+            g.add((p, RDF.type, OWL.ObjectProperty))
+        for rng in list(g.objects(p, RDFS.range)):
+            if isinstance(rng, URIRef) and str(rng).startswith(str(XSD)):
+                g.remove((p, RDFS.range, rng))
     # 정리 4: xsd:pattern 앵커 제거 (XSD 정규식은 전체 일치가 암묵)
     for s, p, o in list(g.triples((None, XSD.pattern, None))):
         g.remove((s, p, o))
@@ -144,11 +168,38 @@ def build_owl() -> tuple[str, int]:
             break
         for s in orphan:
             g.remove((s, None, None))
-    g.parse(ALIGN, format="turtle")
+    # 정렬 모듈 합치기 — alignment.ttl 의 온톨로지 머리는 떼고(한 문서 = 머리 하나, OWL 2 RDF 매핑 3.1.2) 주석만 wf: 머리로
+    head = URIRef(WFNS)
+    al = Graph().parse(ALIGN, format="turtle")
+    for ont in list(al.subjects(RDF.type, OWL.Ontology)):
+        for c in al.objects(ont, RDFS.comment):
+            g.add((head, RDFS.comment, c))
+        al.remove((ont, None, None))
+    for pfx, ns in al.namespaces():
+        g.bind(pfx, ns, override=False)
+    for t in al:
+        g.add(t)
     ver = yaml.safe_load(SCHEMA.read_text(encoding="utf-8"))["version"]
     for ont in g.subjects(RDF.type, OWL.Ontology):
         g.add((ont, OWL.versionInfo, Literal(str(ver))))
     return canon_ttl(g), removed
+
+
+def _drop_restriction(g, r):
+    """제약 빈 노드 하나를 그것을 가리키는 트리플(subClassOf 등)과 함께 지운다."""
+    for s2, p2 in list(g.subject_predicates(r)):
+        g.remove((s2, p2, r))
+    _drop_node(g, r)
+
+
+def _is_class_expr(g, n) -> bool:
+    """클래스 또는 클래스 합집합(owl:unionOf) — 정리 3 뒤라 선택지(데이터타입)는 owl:Class 가 아니다."""
+    if (n, RDF.type, OWL.Class) in g and (n, OWL.unionOf, None) not in g:
+        return True
+    lst = g.value(n, OWL.unionOf)
+    if lst is not None:
+        return all(_is_class_expr(g, x) for x in Collection(g, lst))
+    return False
 
 
 def build_terms() -> str:
