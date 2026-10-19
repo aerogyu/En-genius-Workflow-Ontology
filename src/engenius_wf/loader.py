@@ -1,0 +1,125 @@
+"""검사 1층: 읽기 — 엄격 YAML, 모든 값을 글자로.
+
+yaml.BaseLoader 를 쓴다: yes/no/0.1/1.10 을 바꾸지 않고 글자 그대로 (YAML 1.1 함정 원천 차단). 참/거짓·정수는 스키마상
+그 형인 칸에서만 normalize 가 바꾼다. 묶음·목록은 행 번호를 품는 LDict·LList 로 읽어 모든 메시지가 파일 행을 가리킨다.
+코드: Y01 cp949(ANSI) 저장(경고) · Y02 탭·전각 공백 · Y03 YAML 문법(한국어 번역) · Y04 같은 칸 두 번 · Y05 둥근 따옴표(경고).
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import yaml
+
+from engenius_wf.report import Report
+
+
+class LDict(dict):
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.line = 0
+        self.klines: dict = {}
+
+
+class LList(list):
+    def __init__(self, *a):
+        super().__init__(*a)
+        self.line = 0
+        self.ilines: list = []
+
+
+class _Loader(yaml.BaseLoader):          # BaseLoader: yes/no/0.1/1.10 를 바꾸지 않고 글자 그대로 (YAML 1.1 함정 원천 차단)
+    pass
+
+
+def _map(loader, node):
+    m = LDict()
+    m.line = node.start_mark.line + 1
+    for kn, vn in node.value:
+        kl = kn.start_mark.line + 1
+        k = kn.value.strip() if isinstance(kn, yaml.ScalarNode) else str(kn)
+        if k in m:
+            loader.dups.append((kl, f"'{k}' 가 같은 묶음 안에 두 번 (앞은 {m.klines[k]}행)",
+                                "YAML 은 뒤의 것으로 조용히 덮어쓴다 — 하나로 합치거나 지우세요"))
+        m[k] = loader.construct_object(vn, deep=True)
+        m.klines[k] = kl
+    return m
+
+
+def _seq(loader, node):
+    s = LList()
+    s.line = node.start_mark.line + 1
+    for it in node.value:
+        s.append(loader.construct_object(it, deep=True))
+        s.ilines.append(it.start_mark.line + 1)
+    return s
+
+
+_Loader.add_constructor("tag:yaml.org,2002:map", _map)
+_Loader.add_constructor("tag:yaml.org,2002:seq", _seq)
+
+# PyYAML 영문 오류 → (한국어 설명, 고치는 법)
+YAML_HINTS = [
+    ("mapping values are not allowed", "값 안에 ': '(콜론+공백)이 있다", "설명에 콜론을 쓰려면 값 전체를 큰따옴표로: \"kg/s | 유량: 입구\""),
+    ("cannot start any token", "값의 첫 글자로 쓸 수 없는 기호 (% @ ` 등)", "퍼센트는 '퍼센트' 로 쓰거나 값 전체를 큰따옴표로"),
+    ("sequence entries are not allowed", "값이 '- ' 로 시작한다", "무차원은 '-' 대신 1"),
+    ("could not find expected ':'", "':' 가 빠졌거나 들여쓰기가 어긋났다", "위아래 줄과 들여쓰기 칸 수를 맞추세요"),
+    ("did not find expected key", "들여쓰기가 위 줄과 맞지 않는다", "같은 수준의 칸은 같은 칸에서 시작"),
+    ("expected ',' or '}'", "{ … } 안에 쉼표·콜론이 든 값이 있다", "그 값만 큰따옴표로 감싸세요: {label: \"a, b\"}"),
+    ("expected ',' or ']'", "[ … ] 안에 쉼표가 든 값이 있다", "그 값만 큰따옴표로 감싸세요"),
+    ("expected <block end>", "들여쓰기가 맞지 않는다 (또는 따옴표 뒤에 글자가 더 있음)", "값의 일부만 따옴표로 감쌀 수 없다 — 값 전체를"),
+    ("found unexpected end of stream", "따옴표가 닫히지 않았다", "여는·닫는 따옴표 짝 확인"),
+    ("while scanning a quoted scalar", "따옴표가 닫히지 않았다", "여는·닫는 따옴표 짝 확인"),
+]
+
+
+def read_yaml(path: Path, rep: Report):
+    """YAML 파일 하나 → LDict (문제가 있으면 rep 에 남기고 None)."""
+    raw = path.read_bytes()
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = raw.decode("cp949", errors="replace")
+        rep.warn("Y01", path.name, "UTF-8 이 아니다 (ANSI/cp949 로 읽음)", "메모장 '다른 이름으로 저장' → 인코딩 UTF-8")
+    bad = False
+    for i, ln in enumerate(text.splitlines(), 1):
+        lead = ln[: len(ln) - len(ln.lstrip(" \t　"))]
+        if "\t" in lead:
+            rep.err("Y02", (path.name, i), "들여쓰기에 탭 문자", "탭 대신 스페이스로")
+            bad = True
+        if "　" in ln:
+            rep.err("Y02", (path.name, i), "전각 공백(한글 입력 중 스페이스)", "한/영 키를 영문으로 바꾸고 스페이스를 다시")
+            bad = True
+        if any(q in ln for q in "“”‘’"):
+            rep.warn("Y05", (path.name, i), "둥근 따옴표(“ ” ‘ ’) — YAML 은 곧은 따옴표(\" ')만 안다")
+    if bad:
+        return None
+    loader = _Loader(text)
+    loader.dups = []
+    try:
+        data = loader.get_single_data()
+    except yaml.YAMLError as e:
+        mark = getattr(e, "problem_mark", None)
+        line = mark.line + 1 if mark else 0
+        prob = f"{getattr(e, 'context', '') or ''} {getattr(e, 'problem', '') or ''}"
+        msg, hint = "YAML 문법 오류", str(getattr(e, "problem", e))
+        for key, m_, h in YAML_HINTS:
+            if key in prob:
+                msg, hint = m_, h
+                break
+        lines = text.splitlines()
+        src = lines[line - 1].strip() if 0 < line <= len(lines) else ""
+        rep.err("Y03", (path.name, line), f"{msg}:  {src}", hint)
+        return None
+    finally:
+        loader.dispose()
+    for line, m_, h in loader.dups:
+        rep.err("Y04", (path.name, line), m_, h)
+    if loader.dups:
+        return None
+    if data is None or data == "":
+        return LDict()
+    if not isinstance(data, dict):
+        rep.err("S02", path.name, "파일 맨 위는 'steps:' 같은 칸 이름이어야 한다")
+        return None
+    return data
