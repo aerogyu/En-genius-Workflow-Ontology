@@ -65,7 +65,11 @@
 - [x] **W0 골격 (2026-10-19)** — 골격(`4c3de62`) · 시안 이식 `wf_build.py`/`wf_schema.py` → `src/engenius_wf/` 동작 그대로(`bbd4e21`, 시안과 나란히 비교해 출력 같음) ·
   예시 2(short·textbook)+합성 카탈로그+질의 q01~q08(`102b5a8`) · 시안 검증 V1~V12 를 pytest 로(`0cd1f6e`) · .bat 10개 + `scripts/bat_helper.py`(`1120b69`) · 문서·이 파일.
   pytest 156 통과 skip 0 (Java·Fuseki·형제 합성 survey.ttl 있을 때). 깨끗한 복사본에서 setup_offline → build → selftest PASS. 새 wheel 0.
-- [ ] **W1 검토 + 작성 형식 ← 다음** — 이식 시안의 독립 검토·결함 수리(`docs/03` 4-1 의 21건), P-Plan·QUDT IRI 원본 대조, 작성 안내 다듬기.
+- [~] **W1 검토 + 작성 형식 ← 진행 중** — **독립 검토 지적 40건(같은 것 4쌍) 수리 완료 (2026-10-20, `docs/03` 4-0)**: 루프 여럿(같은 back_to = 한 반복·안쪽 루프 곁가지·L04·배지, `e9431e1`) ·
+  생성 OWL·SHACL(객체 속성·versionInfo·머리 하나·생산 단계 하나·isSubPlanOfPlan, `8fd4ecc`) · 레지스트리(G04~G06·G01 방향·산출 뒤 쓰기, `8252536`) ·
+  계약 판(품은 계약 스냅샷·개명 승계·동결 판 스키마·V08~V10·사유 인명, `bfe0e7f`) · 항목·validate(C10·C11·NaN·같은 칸 두 번, `88b9c98`) ·
+  작성 메시지·그림(U02·R01·R04·Y03·Y04·하위 단계, `4e5cd26`) · 반출 줄·문서(`bd27c74`). pytest 228 통과 skip 0.
+  남은 것: `docs/03` 4-1 미수리 항목(#1·2·4·5·7·10·12~21) · 4-0b Leo 결정 거리 6 · 4-0c(OWL API 프로파일 잔여) · P-Plan·QUDT IRI 원본 대조(4-2) · 작성 안내 다듬기.
   끝에 **★ Leo 확인 ①** (멈춤): Leo 가 메모장으로 공개 수준 분야 하나(예: 이차유로)를 써 보고 막힌 곳 모으기 · 분야 key 6개·단위 시작 목록 결정.
 - [ ] W2 검사기 + 오류 골든 (실수 주입 30종 이상, rules.yaml 수준 조정 제한)
 - [ ] W3 RDF·계약 — V1~V12 는 W0 에서 통과, **판 규칙표 config 화**가 남음
@@ -84,7 +88,7 @@ config/          rules.yaml · units.yaml (사내 오버레이 data/real/config/
 workflows/examples/  short · textbook (각 폴더 안 _registry·_released) · catalog/tools_synthetic.ttl
 queries/         q01~q08.rq (SPARQL 1.1 표준만)
 scripts/         env · build · check · validate · release · link_tools · schema · doctor · selftest · setup_offline (.bat) + bat_helper.py
-tests/           pytest + golden/ (골든은 시안 출력에서) · wfhelp.py (예시 복사·Jena 찾기)
+tests/           pytest + golden/ (골든은 시안 출력에서) · fixtures/loops/ (루프 여럿 가상 예시) · wfhelp.py (예시 복사·Jena 찾기)
 docs/            01_설계 · 02_작성안내 · 03_인수인계
 data/real/       (git 제외) 사내에서만 — workflows/ · config/
 output/          (git 제외) 실행 결과 output/<시각>_<폴더>/
@@ -124,3 +128,5 @@ offline/         (git 제외 파일만) selftest 결과·설치 판 표식·whee
 - **실수 예시의 가명** — 실수 주입 '인명 메모' 사례가 관용 가명 '홍길동 책임' 을 쓴다 (실명 아님). 그대로 둘지 (`docs/03` 4-1 #16).
 - **Graph Studio PoC 산출물 대조** — P-Plan·PROV 를 아는지, OWL 을 받아 대조 (위험 1).
 - 결정 Q2 의 확장(from_step) 필요 여부 — 실제 분야를 써 본 뒤 (Leo 확인 ①).
+- **W1 검토에서 나온 결정 거리** (`docs/03` 4-0b, 권장안 있음): 폐기 IRI 를 renamed_from 으로 되살려 잇기(지금 G06 경고만) · 폐기 key 재사용 시 옛 IRI 되살림(지금 G05 참고) ·
+  옛 key 봉투를 validate 가 찾아 줄지 · 품은 계약 key 개명 = MAJOR 유지할지 · 판 규칙 작은 결정(묶음 이름 PATCH·순서 무시·C11 오류 — 권장안으로 넣음) · 루프 back_from 여러 개(권장: 하지 않음).
