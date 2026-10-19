@@ -1,0 +1,12 @@
+# Q3 루프 몸통·나르는 데이터·수렴 뒤 단계 (빌드가 계산한 것)
+PREFIX wf: <http://en-genius.local/onto/wf/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?loop ?member ?carries ?after
+WHERE {
+  ?l a wf:Loop ;
+     skos:notation ?loop ;
+     wf:loopMember/skos:notation ?member ;
+     wf:carries/skos:notation ?carries .
+  OPTIONAL { ?l wf:afterConvergence/skos:notation ?after }
+}

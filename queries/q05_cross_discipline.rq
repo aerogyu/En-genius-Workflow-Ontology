@@ -1,0 +1,17 @@
+# Q5 분야를 건너는 데이터 (P-Plan 변수 경로: 만드는 단계 → 변수 → 받는 단계, 분야가 다를 때)
+PREFIX wf: <http://en-genius.local/onto/wf/>
+PREFIX p-plan: <http://purl.org/net/p-plan#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+SELECT ?from ?to ?contract
+WHERE {
+  ?v p-plan:isOutputVarOf ?a ;
+     dcterms:conformsTo/skos:notation ?contract .
+  ?b p-plan:hasInputVar ?v .
+  ?a wf:discipline ?da ;
+     skos:notation ?from .
+  ?b wf:discipline ?db ;
+     skos:notation ?to .
+  FILTER(?da != ?db)
+}

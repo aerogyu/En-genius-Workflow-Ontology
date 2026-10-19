@@ -1,0 +1,64 @@
+# 성능 분야 — 개념설계 (공개 교과서 수준 예시, 스테이션 번호는 SAE AS755 관례)
+discipline: perf
+
+steps:
+  - key: perf-cycle-dp
+    label: 설계점 사이클 해석
+    tools: gasturb
+    inputs: if-engine-reqs              # external 계약 (워크플로 밖에서 옴)
+    outputs: if-cycle-dp
+
+  - key: perf-offdesign
+    label: 탈설계점 성능 해석 (부품 맵 매칭)
+    tools: gasturb
+    inputs:                             # 선후(perf-cycle-dp·cmp-map → 여기)는 빌드가 계산 — after 불필요
+      - if-cycle-dp
+      - {interface: if-cmp-map, transfer: 파일, format: csv}
+    outputs: if-perf-od
+
+interfaces:
+  - key: if-engine-reqs
+    label: 엔진 요구 조건
+    version: 1.0.0
+    status: 확정
+    external: true                      # 체계·고객에서 들어옴 — 만드는 단계 없음이 정상
+    items:
+      Fn_TO: kN | 이륙 추력
+      alt:   m  | 설계점 고도
+      Mach:  1  | 설계점 비행 마하수
+
+  - key: if-cycle-dp
+    label: 설계점 사이클 결과
+    version: 0.1.0
+    records:
+      - name: Station
+        label: 스테이션 상태
+        items:
+          station: text | 스테이션 번호 (SAE AS755 관례 2·25·3·4·45·5)
+          W:  kg/s | 질량유량
+          Pt: kPa  | 전압
+          Tt: K    | 전온도
+    items:
+      OPR: 1 | 전체 압력비
+      Tt4: {unit: K, label: 터빈 입구 전온도, minimum: 800, maximum: 2200}
+      BPR: 1 | 바이패스비 | 선택
+      stations: struct:Station[] | 스테이션 표
+
+  - key: if-perf-od
+    label: 탈설계점 작동점
+    version: 0.1.0
+    items:
+      N_rel:    퍼센트 | 상대 회전수
+      W2R:      kg/s   | 압축기 입구 수정 유량
+      PR_c:     1      | 압축기 압력비
+      mismatch: 퍼센트 | 설계점 대비 작동점 차이
+
+loops:                                  # 분야를 건너는 루프는 back_from 단계가 있는 파일에
+  - key: loop-cmp-match
+    label: 압축기–사이클 매칭 루프
+    back_from: perf-offdesign           # 여기서
+    back_to: cmp-meanline               # 여기로 되돌아간다
+    until: 작동점 차이 mismatch 1 % 이내이고 서지 마진 15 % 이상 (예시 값, 판정은 엔지니어)
+    initial: 첫 바퀴는 탈설계 결과 없이 설계점 값만으로 (mismatch 0 가정)
+    monitor: [if-perf-od.mismatch, if-cmp-map.surge_margin]
+    max_iterations: 5

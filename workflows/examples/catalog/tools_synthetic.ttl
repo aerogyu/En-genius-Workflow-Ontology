@@ -1,0 +1,10 @@
+# 합성 툴 카탈로그 — Tool 온톨로지 survey.ttl 과 같은 어휘(eg:Tool·skos:prefLabel·altLabel·eg:status·eg:merged_into)
+@prefix eg: <http://en-genius.local/onto/> .
+@prefix egid: <http://en-genius.local/id/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+egid:TOOL-900001 a eg:Tool ; rdfs:label "GasTurb"@ko ; skos:prefLabel "GasTurb"@ko ; skos:altLabel "GasTurb 14"@ko ; eg:status "활성" .
+egid:TOOL-900005 a eg:Tool ; rdfs:label "GasTurb 13"@ko ; skos:prefLabel "GasTurb 13"@ko ; eg:status "통합됨" ; eg:merged_into egid:TOOL-900001 .
+egid:TOOL-900002 a eg:Tool ; rdfs:label "AxSTREAM"@ko ; skos:prefLabel "AxSTREAM"@ko ; eg:status "활성" .
+egid:TOOL-900003 a eg:Tool ; rdfs:label "ANSYS CFX"@ko ; skos:prefLabel "ANSYS CFX"@ko ; skos:altLabel "CFX"@ko ; eg:status "활성" .

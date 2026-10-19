@@ -1,0 +1,17 @@
+# Q7 (교차) 툴 연결 상태 — 워크플로 툴 ↔ Tool 온톨로지 (survey.ttl 을 함께 올렸을 때)
+# 연결 계약 4술어 중 skos:prefLabel·eg:status 를 읽는다
+PREFIX wf: <http://en-genius.local/onto/wf/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX eg: <http://en-genius.local/onto/>
+
+SELECT ?tool ?id ?ontoLabel ?status
+WHERE {
+  ?t a wf:ToolRef ;
+     skos:notation ?tool .
+  OPTIONAL {
+    ?t wf:ontoTool ?o .
+    BIND(STRAFTER(STR(?o), "/id/") AS ?id)
+    OPTIONAL { ?o skos:prefLabel ?ontoLabel }
+    OPTIONAL { ?o eg:status ?status }
+  }
+}

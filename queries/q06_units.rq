@@ -1,0 +1,10 @@
+# Q6 단위별 숫자 항목 수 (QUDT 단위 IRI)
+PREFIX wf: <http://en-genius.local/onto/wf/>
+PREFIX qudt: <http://qudt.org/schema/qudt/>
+
+SELECT ?unit (COUNT(?i) AS ?n)
+WHERE {
+  ?i a wf:InterfaceItem ;
+     qudt:hasUnit ?unit .
+}
+GROUP BY ?unit

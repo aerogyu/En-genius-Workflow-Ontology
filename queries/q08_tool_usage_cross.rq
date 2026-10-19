@@ -1,0 +1,18 @@
+# Q8 (교차) 수기 입력을 받는 툴의 조사 툴사용 — 자동화 IF·입력 확장자·전달 방법 (survey.ttl 을 함께 올렸을 때)
+# 주의: 연결 계약 4술어 밖의 Tool 온톨로지 술어(usage_tool·automation_if·io_owner·direction·extensions·transfer_method)를 읽는다
+PREFIX wf: <http://en-genius.local/onto/wf/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX eg: <http://en-genius.local/onto/>
+
+SELECT DISTINCT ?step ?contract ?use ?aif ?ext ?tm
+WHERE {
+  ?s wf:hasInput ?b ;
+     skos:notation ?step .
+  ?b wf:transfer "메일·수기 전달" ;
+     wf:interface/skos:notation ?contract ;
+     wf:viaTool/wf:ontoTool ?t .
+  ?u eg:usage_tool ?t .
+  BIND(STRAFTER(STR(?u), "/id/") AS ?use)
+  OPTIONAL { ?u eg:automation_if ?aif }
+  OPTIONAL { ?io eg:io_owner ?u ; eg:direction "입력(소비)" ; eg:extensions ?ext ; eg:transfer_method ?tm }
+}

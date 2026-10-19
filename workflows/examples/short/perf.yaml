@@ -1,0 +1,18 @@
+discipline: perf                        # 이 파일의 단계·계약은 성능 분야
+
+steps:
+  - key: perf-cycle
+    label: 설계점 사이클 해석
+    tools: gasturb
+    inputs: if-cmp-map                  # 압축기 맵 — 루프로 되돌아오는 데이터 (아래 loops 는 cmp.yaml)
+    outputs: if-cycle-dp
+
+interfaces:
+  - key: if-cycle-dp
+    label: 설계점 사이클 결과
+    version: 0.1.0
+    items:                              # 한 줄 = 이름: 단위 | 한국어 설명 [| 선택]
+      W2:   kg/s | 압축기 입구 유량
+      PR_c: 1    | 압축기 압력비
+      Tt4:  K    | 터빈 입구 전온도
+      BPR:  1    | 바이패스비 | 선택

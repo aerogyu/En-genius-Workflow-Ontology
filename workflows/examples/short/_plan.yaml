@@ -1,0 +1,10 @@
+# 워크플로 머리·분야·툴 목록 — 전체에서 한 번 (공개 교과서 수준 예시)
+plan: {key: concept-design, label: 개념설계 워크플로 (교과서 예시), phase: 개념설계, version: 0.1}
+
+disciplines:
+  - {key: perf, label: 성능}
+  - {key: cmp,  label: 압축기}
+
+tools:                                  # tool_id 는 사내에서 link-tools 후보를 보고 사람이 적는다
+  - {key: gasturb, label: GasTurb}
+  - {key: excel,   label: Excel}

@@ -1,0 +1,33 @@
+{
+  "def": {
+    "key": "if-engine-reqs",
+    "label": "엔진 요구 조건",
+    "version": "1.0.0",
+    "items": [
+      {
+        "name": "Fn_TO",
+        "label": "이륙 추력",
+        "type": "number",
+        "unit": "kN",
+        "required": true
+      },
+      {
+        "name": "alt",
+        "label": "설계점 고도",
+        "type": "number",
+        "unit": "m",
+        "required": true
+      },
+      {
+        "name": "Mach",
+        "label": "설계점 비행 마하수",
+        "type": "number",
+        "unit": "1",
+        "required": true
+      }
+    ],
+    "records": []
+  },
+  "released_at": "2026-10-19",
+  "reason": "체계 요구 조건 확정 (교과서 예시)"
+}

@@ -1,0 +1,11 @@
+# Q1 P-Plan 어휘만으로 단계·선행 (다른 시스템이 표준 어휘로 읽는 모양)
+# 결과: 단계 key · 바로 앞 단계 key (p-plan:isPrecededBy — 루프로 되돌아가는 간선은 없다, 늘 DAG)
+PREFIX p-plan: <http://purl.org/net/p-plan#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?step ?prev
+WHERE {
+  ?x a p-plan:Step ;
+     skos:notation ?step ;
+     p-plan:isPrecededBy/skos:notation ?prev .
+}

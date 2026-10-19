@@ -1,0 +1,87 @@
+# 압축기 분야 — 개념설계 (공개 교과서 수준 예시)
+discipline: cmp
+
+steps:
+  - key: cmp-meanline
+    label: 압축기 1D 평균반경 설계 (단수·속도삼각형)
+    tools: meanline-py, excel
+    components: hpc
+    inputs:
+      - {interface: if-cycle-dp, transfer: 수기, tool: excel}   # 사이클 결과를 엑셀에 손으로 옮김 → Tool Agent 후보
+      - {interface: if-perf-od, transfer: 수기, tool: excel}    # 루프로 되돌아오는 데이터 (loops 는 perf.yaml)
+    outputs:
+      - {interface: if-cmp-1d, tool: meanline-py, format: csv}
+
+  - key: cmp-map
+    label: 압축기 특성 맵 생성
+    tools: axstream
+    components: hpc
+    inputs: {interface: if-cmp-1d, transfer: 파일, format: csv}
+    outputs: if-cmp-map
+
+  - key: cmp-cfd-check                  # cmp-map 과 선후가 없으니 병렬. 루프 몸통 밖 → '수렴 뒤 단계'
+    label: 압축기 3D 유동 확인 (설계점)
+    components: hpc
+    inputs: if-cmp-1d
+    outputs: if-cmp-cfd-summary
+
+  - key: cmp-cfd-mesh                   # 하위 단계 — part_of 로 상위 단계(작업 묶음)를 가리킨다
+    label: 압축기 유로 메시 생성
+    part_of: cmp-cfd-check
+    tools: turbogrid
+    inputs: if-cmp-1d
+    outputs: if-cmp-mesh
+
+  - key: cmp-cfd-solve
+    label: 압축기 3D 정상 유동 해석
+    part_of: cmp-cfd-check
+    tools: cfx
+    inputs: if-cmp-mesh
+    outputs: if-cmp-cfd-summary
+
+interfaces:
+  - key: if-cmp-1d
+    label: 압축기 1D 설계 결과
+    version: 0.1.0
+    items:
+      n_stages: int  | 단수
+      PR_c:     1    | 설계 압력비
+      eta_is:   {unit: "1", label: 등엔트로피 효율, minimum: 0, maximum: 1}
+      N_mech:   rpm  | 기계 회전수
+      flowpath: file:csv | 유로 형상 (자오면 좌표)
+
+  - key: if-cmp-map
+    label: 압축기 특성 맵
+    version: 0.1.0
+    records:                            # 표 모양 데이터: 맵 = 속도선 여러 개, 속도선 = 점 여러 개
+      - name: MapPoint
+        label: 맵 한 점
+        items:
+          W_corr: kg/s | 수정 유량
+          PR:     1    | 압력비
+          eta:    {unit: "1", label: 단열효율, minimum: 0, maximum: 1}
+      - name: SpeedLine
+        label: 속도선
+        items:
+          N_rel:  퍼센트 | 상대 수정 회전수
+          points: {type: struct, ref: MapPoint, list: true, min_items: 3, label: 맵 점}
+    items:
+      speed_lines:  {type: struct, ref: SpeedLine, list: true, min_items: 2, label: 속도선}
+      surge_margin: 퍼센트 | 설계점 서지 마진
+      map_file:     file:csv,txt | 맵 파일 | 선택
+      map_source:   {type: enum, values: [1D 상관식, 3D CFD, 시험], label: 맵 출처}
+
+  - key: if-cmp-mesh
+    label: 압축기 유로 메시
+    version: 0.1.0
+    items:
+      mesh_file: file:cgns | 메시 파일
+      n_cells:   int       | 격자 수
+
+  - key: if-cmp-cfd-summary
+    label: 압축기 3D 유동 확인 요약
+    version: 0.1.0
+    deliverable: true                   # 최종 산출물 — 받는 단계 없음이 정상
+    items:
+      eta_is_cfd: 1 | CFD 효율
+      report:     file:pdf,docx | 보고서

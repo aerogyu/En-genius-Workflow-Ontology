@@ -1,0 +1,28 @@
+# 워크플로 머리·분야·구성품·툴 목록 — 전체에서 한 번 (공개 교과서 수준 예시)
+plan:
+  key: concept-design
+  label: 개념설계 워크플로 (교과서 예시)
+  phase: 개념설계
+  version: 0.1
+
+disciplines:                            # 적은 순서 = 그림의 레인 순서
+  - {key: perf, label: 성능}
+  - {key: cmp,  label: 압축기}
+  - {key: comb, label: 연소기}
+  - {key: trb,  label: 터빈}
+  - {key: cool, label: 냉각}
+  - {key: sas,  label: 이차유로}
+
+components:
+  - {key: compressor, label: 압축기}
+  - {key: hpc, label: 고압압축기, broader: compressor}
+
+# Tool 온톨로지와 잇는 칸(tool_id·label_at_link)은 여기 한 곳에만. 아래 ID 는 합성 카탈로그(examples/catalog,
+# 기존 저장소 합성 survey.ttl) 기준 — 사내에서는 사내 survey.ttl 로 link-tools 후보를 보고 사람이 적는다.
+tools:
+  - {key: gasturb,  label: GasTurb,  tool_id: TOOL-900005, label_at_link: GasTurb 13}   # 통합된 ID → 경고 시연
+  - {key: axstream, label: AxSTREAM, tool_id: TOOL-900002, label_at_link: AxSTREAM}
+  - {key: excel,    label: Excel,    tool_id: TOOL-000002, label_at_link: Excel}
+  - {key: turbogrid, label: ANSYS TurboGrid}                    # 미연결 — 카탈로그에 없음
+  - {key: cfx,       label: ANSYS CFX}                          # 미연결 — 카탈로그에 같은 이름 있음 (후보 제안)
+  - {key: meanline-py, label: 평균반경 설계 스크립트 (가상), not_in_survey: 개인 스크립트라 조사 대상 아님}

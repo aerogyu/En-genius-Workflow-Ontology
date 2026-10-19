@@ -1,0 +1,10 @@
+# Q4 cmp-map 의 상류 전체 (p-plan:isPrecededBy+) — 단계 key 는 예시 값, 다른 단계를 보려면 "cmp-map" 을 바꾼다
+PREFIX p-plan: <http://purl.org/net/p-plan#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT DISTINCT ?up
+WHERE {
+  ?x skos:notation "cmp-map" ;
+     p-plan:isPrecededBy+ ?u .
+  ?u skos:notation ?up .
+}

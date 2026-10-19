@@ -1,0 +1,11 @@
+kind,key,id,status
+discipline,perf,DSC-0001,활성
+discipline,cmp,DSC-0002,활성
+interface,if-cmp-map,IFC-000001,활성
+interface,if-cycle-dp,IFC-000002,활성
+loop,loop-cmp-match,LOOP-0001,활성
+plan,concept-design,PLAN-0001,활성
+step,cmp-meanline,STEP-000001,활성
+step,perf-cycle,STEP-000002,활성
+tool,gasturb,TRF-0001,활성
+tool,excel,TRF-0002,활성

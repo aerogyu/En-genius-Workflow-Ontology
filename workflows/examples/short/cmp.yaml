@@ -1,0 +1,28 @@
+discipline: cmp
+
+steps:
+  - key: cmp-meanline
+    label: 압축기 1D 평균반경 설계
+    tools: excel
+    inputs:
+      - {interface: if-cycle-dp, transfer: 수기}   # 사이클 결과를 엑셀에 손으로 옮김 → Tool Agent 후보
+    outputs: if-cmp-map
+
+interfaces:
+  - key: if-cmp-map
+    label: 압축기 특성 맵
+    version: 0.1.0
+    items:
+      map_file:     file:csv | 맵 파일 (속도선별 수정유량·압력비·효율)
+      surge_margin: 퍼센트   | 설계점 서지 마진
+      map_source:   {type: enum, values: [1D 상관식, 3D CFD, 시험], label: 맵 출처}
+
+loops:                                  # 되돌아가는 간선 하나 = 루프 하나. 몸통은 빌드가 계산
+  - key: loop-cmp-match
+    label: 압축기–사이클 매칭
+    back_from: cmp-meanline             # 여기서
+    back_to: perf-cycle                 # 여기로 되돌아간다
+    until: 맵을 반영한 사이클 재정합에서 추력 오차 1 % 이내 (예시 값, 판정은 엔지니어)
+    initial: 첫 바퀴는 맵 없이 설계점 효율 가정값
+    monitor: if-cmp-map.surge_margin
+    max_iterations: 5

@@ -1,0 +1,20 @@
+# Q2 수기 전달 입력 = Tool Agent 후보 (주는 단계·툴 → 받는 단계·툴, 계약)
+# 받는 툴은 입력 바인딩의 tool(viaTool) 이 있으면 그것, 없으면 단계의 tools — 툴 쌍 과대 산출을 막는다
+PREFIX wf: <http://en-genius.local/onto/wf/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT DISTINCT ?from ?ftool ?to ?ttool ?contract
+WHERE {
+  ?y wf:hasInput ?b .
+  ?b wf:transfer "메일·수기 전달" ;
+     wf:interface ?c .
+  ?c skos:notation ?contract .
+  ?y skos:notation ?to .
+  OPTIONAL { ?b wf:viaTool/rdfs:label ?t1 }
+  OPTIONAL { ?y wf:usesTool/rdfs:label ?t2 }
+  BIND(COALESCE(?t1, ?t2) AS ?ttool)
+  ?x wf:produces ?c ;
+     skos:notation ?from .
+  OPTIONAL { ?x wf:usesTool/rdfs:label ?ftool }
+}
