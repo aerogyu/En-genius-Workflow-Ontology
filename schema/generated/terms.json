@@ -1,0 +1,953 @@
+{
+ "classes": {
+  "Component": {
+   "slots": {
+    "broader": {
+     "built": false,
+     "multivalued": false,
+     "range": "Component",
+     "required": false,
+     "uri": "http://www.w3.org/2004/02/skos/core#broader"
+    },
+    "key": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2004/02/skos/core#notation"
+    },
+    "label": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "note": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://www.w3.org/2004/02/skos/core#note"
+    },
+    "renamed_from": {
+     "built": false,
+     "multivalued": true,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/renamedFrom"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/Component"
+  },
+  "DataVariable": {
+   "slots": {
+    "conforms_to": {
+     "built": false,
+     "multivalued": false,
+     "range": "Interface",
+     "required": true,
+     "uri": "http://purl.org/dc/terms/conformsTo"
+    },
+    "label": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "output_of": {
+     "built": false,
+     "multivalued": true,
+     "range": "Step",
+     "required": false,
+     "uri": "http://purl.org/net/p-plan#isOutputVarOf"
+    },
+    "variable_of_plan": {
+     "built": false,
+     "multivalued": false,
+     "range": "Workflow",
+     "required": true,
+     "uri": "http://purl.org/net/p-plan#isVariableOfPlan"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/DataVariable"
+  },
+  "Discipline": {
+   "slots": {
+    "key": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2004/02/skos/core#notation"
+    },
+    "label": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "note": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://www.w3.org/2004/02/skos/core#note"
+    },
+    "related_parts": {
+     "built": false,
+     "multivalued": true,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/relatedPart"
+    },
+    "renamed_from": {
+     "built": false,
+     "multivalued": true,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/renamedFrom"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/Discipline"
+  },
+  "InputBinding": {
+   "slots": {
+    "format": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/exchangeFormat"
+    },
+    "interface": {
+     "built": false,
+     "multivalued": false,
+     "range": "Interface",
+     "required": true,
+     "uri": "http://en-genius.local/onto/wf/interface"
+    },
+    "kind": {
+     "built": true,
+     "multivalued": false,
+     "range": "BindingKind",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/bindingKind"
+    },
+    "note": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://www.w3.org/2004/02/skos/core#note"
+    },
+    "tool": {
+     "built": false,
+     "multivalued": false,
+     "range": "ToolRef",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/viaTool"
+    },
+    "transfer": {
+     "built": false,
+     "multivalued": false,
+     "range": "TransferMethod",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/transfer"
+    },
+    "variable": {
+     "built": true,
+     "multivalued": false,
+     "range": "DataVariable",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/variable"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/InputBinding"
+  },
+  "Interface": {
+   "slots": {
+    "deliverable": {
+     "built": false,
+     "multivalued": false,
+     "range": "boolean",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/deliverable"
+    },
+    "discipline": {
+     "built": false,
+     "multivalued": false,
+     "range": "Discipline",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/discipline"
+    },
+    "external": {
+     "built": false,
+     "multivalued": false,
+     "range": "boolean",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/external"
+    },
+    "items": {
+     "built": false,
+     "multivalued": true,
+     "range": "InterfaceItem",
+     "required": true,
+     "uri": "http://en-genius.local/onto/wf/hasItem"
+    },
+    "json_schema": {
+     "built": true,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/jsonSchema"
+    },
+    "key": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2004/02/skos/core#notation"
+    },
+    "label": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "note": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://www.w3.org/2004/02/skos/core#note"
+    },
+    "records": {
+     "built": false,
+     "multivalued": true,
+     "range": "Record",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/hasRecord"
+    },
+    "renamed_from": {
+     "built": false,
+     "multivalued": true,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/renamedFrom"
+    },
+    "status": {
+     "built": false,
+     "multivalued": false,
+     "range": "ContractStatus",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/contractStatus"
+    },
+    "version": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2002/07/owl#versionInfo"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/Interface"
+  },
+  "InterfaceItem": {
+   "slots": {
+    "description": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://www.w3.org/2004/02/skos/core#definition"
+    },
+    "formats": {
+     "built": false,
+     "multivalued": true,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/fileFormat"
+    },
+    "label": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "list": {
+     "built": false,
+     "multivalued": false,
+     "range": "boolean",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/isList"
+    },
+    "maximum": {
+     "built": false,
+     "multivalued": false,
+     "range": "float",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/maximum"
+    },
+    "min_items": {
+     "built": false,
+     "multivalued": false,
+     "range": "integer",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/minItems"
+    },
+    "minimum": {
+     "built": false,
+     "multivalued": false,
+     "range": "float",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/minimum"
+    },
+    "name": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://en-genius.local/onto/wf/itemName"
+    },
+    "order": {
+     "built": true,
+     "multivalued": false,
+     "range": "integer",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/order"
+    },
+    "ref": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/structRef"
+    },
+    "required": {
+     "built": false,
+     "multivalued": false,
+     "range": "boolean",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/isRequired"
+    },
+    "type": {
+     "built": false,
+     "multivalued": false,
+     "range": "DataType",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/dataType"
+    },
+    "unit": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/unitCode"
+    },
+    "unit_iri": {
+     "built": true,
+     "multivalued": false,
+     "range": "uriorcurie",
+     "required": false,
+     "uri": "http://qudt.org/schema/qudt/hasUnit"
+    },
+    "values": {
+     "built": false,
+     "multivalued": true,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/allowedValue"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/InterfaceItem"
+  },
+  "InterfaceRelease": {
+   "slots": {
+    "json_schema": {
+     "built": true,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/jsonSchema"
+    },
+    "label": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "of_interface": {
+     "built": false,
+     "multivalued": false,
+     "range": "Interface",
+     "required": true,
+     "uri": "http://purl.org/dc/terms/isVersionOf"
+    },
+    "reason": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://en-genius.local/onto/wf/releaseReason"
+    },
+    "released_at": {
+     "built": false,
+     "multivalued": false,
+     "range": "date",
+     "required": true,
+     "uri": "http://en-genius.local/onto/wf/releasedAt"
+    },
+    "version": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2002/07/owl#versionInfo"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/InterfaceRelease"
+  },
+  "Loop": {
+   "slots": {
+    "after_convergence": {
+     "built": true,
+     "multivalued": true,
+     "range": "Step",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/afterConvergence"
+    },
+    "back_from": {
+     "built": false,
+     "multivalued": false,
+     "range": "Step",
+     "required": true,
+     "uri": "http://en-genius.local/onto/wf/backFrom"
+    },
+    "back_to": {
+     "built": false,
+     "multivalued": false,
+     "range": "Step",
+     "required": true,
+     "uri": "http://en-genius.local/onto/wf/backTo"
+    },
+    "carries": {
+     "built": true,
+     "multivalued": true,
+     "range": "Interface",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/carries"
+    },
+    "include": {
+     "built": false,
+     "multivalued": true,
+     "range": "Step",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/includeStep"
+    },
+    "initial": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/initialValueNote"
+    },
+    "key": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2004/02/skos/core#notation"
+    },
+    "label": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "max_iterations": {
+     "built": false,
+     "multivalued": false,
+     "range": "integer",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/maxIterations"
+    },
+    "members": {
+     "built": true,
+     "multivalued": true,
+     "range": "Step",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/loopMember"
+    },
+    "monitor": {
+     "built": false,
+     "multivalued": true,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/monitorItem"
+    },
+    "note": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://www.w3.org/2004/02/skos/core#note"
+    },
+    "renamed_from": {
+     "built": false,
+     "multivalued": true,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/renamedFrom"
+    },
+    "until": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://en-genius.local/onto/wf/convergenceNote"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/Loop"
+  },
+  "OutputBinding": {
+   "slots": {
+    "format": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/exchangeFormat"
+    },
+    "interface": {
+     "built": false,
+     "multivalued": false,
+     "range": "Interface",
+     "required": true,
+     "uri": "http://en-genius.local/onto/wf/interface"
+    },
+    "note": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://www.w3.org/2004/02/skos/core#note"
+    },
+    "tool": {
+     "built": false,
+     "multivalued": false,
+     "range": "ToolRef",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/viaTool"
+    },
+    "variable": {
+     "built": true,
+     "multivalued": false,
+     "range": "DataVariable",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/variable"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/OutputBinding"
+  },
+  "Record": {
+   "slots": {
+    "items": {
+     "built": false,
+     "multivalued": true,
+     "range": "InterfaceItem",
+     "required": true,
+     "uri": "http://en-genius.local/onto/wf/hasItem"
+    },
+    "label": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "name": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://en-genius.local/onto/wf/recordName"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/Record"
+  },
+  "Step": {
+   "slots": {
+    "after": {
+     "built": false,
+     "multivalued": true,
+     "range": "Step",
+     "required": false,
+     "uri": "http://purl.org/net/p-plan#isPrecededBy"
+    },
+    "components": {
+     "built": false,
+     "multivalued": true,
+     "range": "Component",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/component"
+    },
+    "consumes": {
+     "built": true,
+     "multivalued": true,
+     "range": "Interface",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/consumes"
+    },
+    "decomposed_as": {
+     "built": true,
+     "multivalued": false,
+     "range": "SubPlan",
+     "required": false,
+     "uri": "http://purl.org/net/p-plan#isDecomposedAsPlan"
+    },
+    "discipline": {
+     "built": false,
+     "multivalued": false,
+     "range": "Discipline",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/discipline"
+    },
+    "in_plan": {
+     "built": true,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://purl.org/net/p-plan#isStepOfPlan"
+    },
+    "input_vars": {
+     "built": true,
+     "multivalued": true,
+     "range": "DataVariable",
+     "required": false,
+     "uri": "http://purl.org/net/p-plan#hasInputVar"
+    },
+    "inputs": {
+     "built": false,
+     "multivalued": true,
+     "range": "InputBinding",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/hasInput"
+    },
+    "key": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2004/02/skos/core#notation"
+    },
+    "label": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "loop_input_vars": {
+     "built": true,
+     "multivalued": true,
+     "range": "DataVariable",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/loopInputVar"
+    },
+    "note": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://www.w3.org/2004/02/skos/core#note"
+    },
+    "outputs": {
+     "built": false,
+     "multivalued": true,
+     "range": "OutputBinding",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/hasOutput"
+    },
+    "part_of": {
+     "built": false,
+     "multivalued": false,
+     "range": "Step",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/partOf"
+    },
+    "produces": {
+     "built": true,
+     "multivalued": true,
+     "range": "Interface",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/produces"
+    },
+    "renamed_from": {
+     "built": false,
+     "multivalued": true,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/renamedFrom"
+    },
+    "status": {
+     "built": false,
+     "multivalued": false,
+     "range": "WorkStatus",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/status"
+    },
+    "tools": {
+     "built": false,
+     "multivalued": true,
+     "range": "ToolRef",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/usesTool"
+    },
+    "when": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/conditionNote"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/Step"
+  },
+  "SubPlan": {
+   "slots": {
+    "key": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2004/02/skos/core#notation"
+    },
+    "label": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2000/01/rdf-schema#label"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/SubPlan"
+  },
+  "ToolRef": {
+   "slots": {
+    "key": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2004/02/skos/core#notation"
+    },
+    "label": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "label_at_link": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/labelAtLink"
+    },
+    "not_in_survey": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/notInSurvey"
+    },
+    "note": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://www.w3.org/2004/02/skos/core#note"
+    },
+    "onto_tool": {
+     "built": true,
+     "multivalued": false,
+     "range": "uriorcurie",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/ontoTool"
+    },
+    "renamed_from": {
+     "built": false,
+     "multivalued": true,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/renamedFrom"
+    },
+    "tool_id": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/toolId"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/ToolRef"
+  },
+  "Workflow": {
+   "slots": {
+    "key": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2004/02/skos/core#notation"
+    },
+    "label": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "note": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": false,
+     "uri": "http://www.w3.org/2004/02/skos/core#note"
+    },
+    "phase": {
+     "built": false,
+     "multivalued": false,
+     "range": "DevPhase",
+     "required": true,
+     "uri": "http://en-genius.local/onto/wf/phase"
+    },
+    "renamed_from": {
+     "built": false,
+     "multivalued": true,
+     "range": "string",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/renamedFrom"
+    },
+    "version": {
+     "built": false,
+     "multivalued": false,
+     "range": "string",
+     "required": true,
+     "uri": "http://www.w3.org/2002/07/owl#versionInfo"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/Workflow"
+  },
+  "WorkflowFile": {
+   "slots": {
+    "components": {
+     "built": false,
+     "multivalued": true,
+     "range": "Component",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/components"
+    },
+    "discipline": {
+     "built": false,
+     "multivalued": false,
+     "range": "Discipline",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/discipline"
+    },
+    "disciplines": {
+     "built": false,
+     "multivalued": true,
+     "range": "Discipline",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/disciplines"
+    },
+    "interfaces": {
+     "built": false,
+     "multivalued": true,
+     "range": "Interface",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/interfaces"
+    },
+    "loops": {
+     "built": false,
+     "multivalued": true,
+     "range": "Loop",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/loops"
+    },
+    "plan": {
+     "built": false,
+     "multivalued": false,
+     "range": "Workflow",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/plan"
+    },
+    "steps": {
+     "built": false,
+     "multivalued": true,
+     "range": "Step",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/steps"
+    },
+    "tools": {
+     "built": false,
+     "multivalued": true,
+     "range": "ToolRef",
+     "required": false,
+     "uri": "http://en-genius.local/onto/wf/tools"
+    }
+   },
+   "uri": "http://en-genius.local/onto/wf/WorkflowFile"
+  }
+ },
+ "enums": {
+  "BindingKind": [
+   "앞 단계",
+   "루프",
+   "외부",
+   "생산자 없음"
+  ],
+  "ContractStatus": [
+   "초안",
+   "검토중",
+   "확정",
+   "대체됨"
+  ],
+  "DataType": [
+   "number",
+   "integer",
+   "string",
+   "boolean",
+   "enum",
+   "file",
+   "struct"
+  ],
+  "DevPhase": [
+   "개념설계",
+   "기본설계",
+   "상세설계"
+  ],
+  "TransferMethod": [
+   "파일 저장",
+   "PDM 등록",
+   "DB 기록",
+   "메일·수기 전달",
+   "타 SW 직접 연동",
+   "미상"
+  ],
+  "WorkStatus": [
+   "초안",
+   "검토중",
+   "확정"
+  ]
+ }
+}

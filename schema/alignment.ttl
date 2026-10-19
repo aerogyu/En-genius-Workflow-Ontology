@@ -1,0 +1,36 @@
+# 표준 어휘 정렬 모듈 (손으로 관리) — LinkML 로 만들지 않는다.
+# gen-owl 은 외부 클래스를 표지로 선언하면 'p-plan:Step rdfs:subClassOf wf:Step'(역방향)과 외부 용어 라벨
+# 덮어쓰기를 만든다 (standards 시안 실측). 그래서 정렬은 우리 → 표준 한 방향 공리만 여기 둔다.
+# 남의 어휘에 대한 주장(예 p-plan:Plan ⊑ prov:Plan)은 쓰지 않는다 — 그건 P-Plan 자신의 공리다.
+@prefix wf:      <http://en-genius.local/onto/wf/> .
+@prefix p-plan:  <http://purl.org/net/p-plan#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+
+<http://en-genius.local/onto/wf/alignment> a owl:Ontology ;
+    rdfs:comment "En-Genius 워크플로 온톨로지 → P-Plan·PROV-O·SKOS 정렬 (한 방향)."@ko .
+
+wf:Workflow     rdfs:subClassOf p-plan:Plan .
+wf:SubPlan      rdfs:subClassOf p-plan:Plan .
+wf:Step         rdfs:subClassOf p-plan:Step .
+wf:DataVariable rdfs:subClassOf p-plan:Variable .
+wf:Discipline   rdfs:subClassOf skos:Concept .
+wf:Component    rdfs:subClassOf skos:Concept .
+wf:InterfaceRelease rdfs:subClassOf prov:Entity .
+
+# 지름길 — P-Plan 경로(Step → Variable → conformsTo → Interface)를 한 번에
+wf:consumes rdfs:comment "= p-plan:hasInputVar ∪ wf:loopInputVar 를 거쳐 dcterms:conformsTo 의 지름길"@ko .
+wf:produces rdfs:comment "= ^p-plan:isOutputVarOf / dcterms:conformsTo 의 지름길"@ko .
+
+# 루프로 되돌아오는 입력 — P-Plan 의 hasInputVar 로 적으면 P-Plan 변수 그래프가 순환이 된다 (standards·authoring 시안 실측).
+# 그래서 별도 속성으로 둔다. P-Plan 소비자에게 이 입력은 보이지 않는다(의도) — '이전 반복의 값'.
+wf:loopInputVar rdfs:comment "루프로 되돌아오는 입력 변수 (이전 반복 값). p-plan:hasInputVar 의 하위 속성으로 두지 않는다 — 두면 추론 시 순환이 다시 생긴다."@ko .
+
+# 반복 루프 — P-Plan·PROV 에 해당 개념 없음. 개념상 BPMN standardLoopCharacteristics(loopCondition·loopMaximum)와 같다 (주석으로만 대응).
+wf:Loop rdfs:comment "되돌아가는 간선의 객체화. p-plan:isPrecededBy 는 DAG 로 남긴다."@ko .
+
+# 툴 — 계획 수준. 실행 기록(나중)에서는 prov:wasAssociatedWith / prov:used 로 내려간다.
+wf:ontoTool rdfs:comment "Tool 온톨로지 eg:Tool IRI (egid:TOOL-…) — 그쪽 노드에 타입·라벨을 쓰지 않는다."@ko .

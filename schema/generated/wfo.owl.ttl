@@ -1,0 +1,907 @@
+# 자동 생성 — 직접 고치지 말 것. 원본: schema/wfo.yaml (+ alignment.ttl), 명령: python -m engenius_wf schema
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix linkml: <https://w3id.org/linkml/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix p-plan: <http://purl.org/net/p-plan#> .
+@prefix pav: <http://purl.org/pav/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix qudt: <http://qudt.org/schema/qudt/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix wf: <http://en-genius.local/onto/wf/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+wf:alignment a owl:Ontology ;
+    rdfs:comment "En-Genius 워크플로 온톨로지 → P-Plan·PROV-O·SKOS 정렬 (한 방향)."@ko ;
+    owl:versionInfo "0.1.0" .
+
+wf:component a owl:ObjectProperty ;
+    rdfs:label "components" ;
+    rdfs:range wf:Component ;
+    skos:definition "관련 구성품." ;
+    skos:inScheme wf: .
+
+wf:components a owl:ObjectProperty ;
+    rdfs:label "components" ;
+    skos:definition "구성품 목록." ;
+    skos:inScheme wf: .
+
+wf:disciplines a owl:ObjectProperty ;
+    rdfs:label "disciplines" ;
+    skos:definition "분야 목록 (적은 순서 = 그림의 레인 순서)." ;
+    skos:inScheme wf: .
+
+wf:interfaces a owl:ObjectProperty ;
+    rdfs:label "interfaces" ;
+    skos:definition "데이터 계약 (내놓는 분야의 파일에 둔다)." ;
+    skos:inScheme wf: .
+
+wf:loops a owl:ObjectProperty ;
+    rdfs:label "loops" ;
+    skos:definition "반복 루프 (back_from 단계가 있는 파일에 둔다)." ;
+    skos:inScheme wf: .
+
+wf:plan a owl:ObjectProperty ;
+    rdfs:label "plan" ;
+    skos:definition "워크플로 머리 — 전체에서 한 번만 (보통 _plan.yaml)." ;
+    skos:inScheme wf: .
+
+wf:steps a owl:ObjectProperty ;
+    rdfs:label "steps" ;
+    skos:definition "단계." ;
+    skos:inScheme wf: .
+
+wf:tools a owl:ObjectProperty ;
+    rdfs:label "tools" ;
+    skos:definition "툴 목록 — Tool 온톨로지와 잇는 칸(tool_id)은 여기 한 곳에만." ;
+    skos:inScheme wf: .
+
+wf:BindingKind a rdfs:Datatype ;
+    rdfs:label "BindingKind" ;
+    owl:equivalentClass [ a rdfs:Datatype ;
+            owl:oneOf ( "앞 단계" "루프" "외부" "생산자 없음" ) ] ;
+    skos:definition "(빌드) 입력의 출처 종류." ;
+    skos:inScheme wf: ;
+    linkml:permissible_values "루프",
+        "생산자 없음",
+        "앞 단계",
+        "외부" .
+
+wf:ContractStatus a rdfs:Datatype ;
+    rdfs:label "ContractStatus" ;
+    owl:equivalentClass [ a rdfs:Datatype ;
+            owl:oneOf ( "초안" "검토중" "확정" "대체됨" ) ] ;
+    skos:definition "계약 상태." ;
+    skos:inScheme wf: ;
+    linkml:permissible_values "검토중",
+        "대체됨",
+        "초안",
+        "확정" .
+
+wf:DataType a rdfs:Datatype ;
+    rdfs:label "DataType" ;
+    owl:equivalentClass [ a rdfs:Datatype ;
+            owl:oneOf ( "number" "integer" "string" "boolean" "enum" "file" "struct" ) ] ;
+    skos:definition "항목 자료형 (JSON Schema 형으로 옮겨진다)." ;
+    skos:inScheme wf: ;
+    linkml:permissible_values "boolean",
+        "enum",
+        "file",
+        "integer",
+        "number",
+        "string",
+        "struct" .
+
+wf:DevPhase a rdfs:Datatype ;
+    rdfs:label "DevPhase" ;
+    owl:equivalentClass [ a rdfs:Datatype ;
+            owl:oneOf ( "개념설계" "기본설계" "상세설계" ) ] ;
+    skos:definition "개발 단계." ;
+    skos:inScheme wf: ;
+    linkml:permissible_values "개념설계",
+        "기본설계",
+        "상세설계" .
+
+wf:InterfaceRelease a owl:Class ;
+    rdfs:label "InterfaceRelease" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty wf:releaseReason ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:date ;
+            owl:onProperty wf:releasedAt ],
+        [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty wf:releaseReason ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:jsonSchema ],
+        [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty wf:releasedAt ],
+        [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty dcterms:isVersionOf ],
+        [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty owl:versionInfo ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:Interface ;
+            owl:onProperty dcterms:isVersionOf ],
+        prov:Entity ;
+    skos:definition "(빌드) 계약의 동결 판 기록 — release 명령이 남긴 일자·사유 (HITL 승인 기록, 인명 없음). 옛 판 항목은 동결 파일과 옛 판 JSON Schema 로 본다." ;
+    skos:exactMatch wf:InterfaceRelease ;
+    skos:inScheme wf: .
+
+wf:Loop a owl:Class ;
+    rdfs:label "Loop" ;
+    rdfs:comment "되돌아가는 간선의 객체화. p-plan:isPrecededBy 는 DAG 로 남긴다."@ko ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom wf:Step ;
+            owl:onProperty wf:backTo ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:Step ;
+            owl:onProperty wf:backFrom ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty wf:convergenceNote ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:maxIterations ],
+        [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty wf:backTo ],
+        [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty wf:backFrom ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:intersectionOf ( xsd:integer [ a rdfs:Datatype ;
+                                owl:onDatatype xsd:integer ;
+                                owl:withRestrictions ( [ xsd:minInclusive 1 ] ) ] ) ] ;
+            owl:onProperty wf:maxIterations ],
+        [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty wf:convergenceNote ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:Step ;
+            owl:onProperty wf:afterConvergence ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:Step ;
+            owl:onProperty wf:loopMember ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty wf:initialValueNote ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:initialValueNote ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[a-z][a-z0-9]*(-[a-z0-9]+)*\\.[A-Za-z][A-Za-z0-9_]*" ] ) ] ;
+            owl:onProperty wf:monitorItem ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:Step ;
+            owl:onProperty wf:includeStep ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:Interface ;
+            owl:onProperty wf:carries ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[a-z][a-z0-9]*(-[a-z0-9]+)*" ] ) ] ;
+            owl:onProperty wf:renamedFrom ] ;
+    skos:definition "반복 루프 — 되돌아가는 간선(back_from → back_to)을 객체로 만든 것. 몸통 단계는 빌드가 계산 (back_to 에서 앞으로 가서 back_from 에 닿는 경로 위의 단계 + include). 몸통 밖인데 루프 안에서 바뀌는 데이터를 받는 단계는 '수렴 뒤 단계'(after_convergence)로 계산해 보여 준다. 수렴 조건·첫 바퀴 값은 메모 (판정은 엔지니어)." ;
+    skos:exactMatch wf:Loop ;
+    skos:inScheme wf: .
+
+wf:TransferMethod a rdfs:Datatype ;
+    rdfs:label "TransferMethod" ;
+    owl:equivalentClass [ a rdfs:Datatype ;
+            owl:oneOf ( "파일 저장" "PDM 등록" "DB 기록" "메일·수기 전달" "타 SW 직접 연동" "미상" ) ] ;
+    skos:definition "전달 방법 — Tool 온톨로지 '전달 방법' 선택지와 같은 값 + 미상 (짧은 별칭은 config/rules.yaml)." ;
+    skos:inScheme wf: ;
+    linkml:permissible_values "DB 기록",
+        "PDM 등록",
+        "메일·수기 전달",
+        "미상",
+        "타 SW 직접 연동",
+        "파일 저장" .
+
+wf:WorkStatus a rdfs:Datatype ;
+    rdfs:label "WorkStatus" ;
+    owl:equivalentClass [ a rdfs:Datatype ;
+            owl:oneOf ( "초안" "검토중" "확정" ) ] ;
+    skos:definition "단계 작성 상태." ;
+    skos:inScheme wf: ;
+    linkml:permissible_values "검토중",
+        "초안",
+        "확정" .
+
+wf:afterConvergence a owl:ObjectProperty ;
+    rdfs:label "after_convergence" ;
+    skos:definition "(빌드) 루프 하류 — 루프 안에서 바뀌는 데이터를 받지만 몸통 밖이라 수렴 뒤에 도는 단계." ;
+    skos:inScheme wf: .
+
+wf:allowedValue a owl:DatatypeProperty ;
+    rdfs:label "values" ;
+    skos:definition "type=enum 일 때 허용 값." ;
+    skos:inScheme wf: .
+
+wf:carries a owl:ObjectProperty ;
+    rdfs:label "carries" ;
+    skos:definition "(빌드) 되돌아가는 간선이 나르는 계약." ;
+    skos:inScheme wf: .
+
+wf:consumes a owl:ObjectProperty ;
+    rdfs:label "consumes" ;
+    rdfs:comment "= p-plan:hasInputVar ∪ wf:loopInputVar 를 거쳐 dcterms:conformsTo 의 지름길"@ko ;
+    skos:definition "(빌드) 받는 계약 지름길." ;
+    skos:inScheme wf: .
+
+wf:fileFormat a owl:DatatypeProperty ;
+    rdfs:label "formats" ;
+    skos:definition "type=file 일 때 확장자 (Tool 온톨로지 정규화 확장자 꼴 — 소문자, 점 없이, 다중 확장자 cas.h5 허용)." ;
+    skos:inScheme wf: .
+
+wf:hasInput a owl:ObjectProperty ;
+    rdfs:label "inputs" ;
+    skos:definition "받는 데이터 — 짧게는 계약 key 만 (빌드가 {interface - key} 로 펼침)." ;
+    skos:inScheme wf: .
+
+wf:hasOutput a owl:ObjectProperty ;
+    rdfs:label "outputs" ;
+    skos:definition "내놓는 데이터 — 짧게는 계약 key 만." ;
+    skos:inScheme wf: .
+
+wf:hasRecord a owl:ObjectProperty ;
+    rdfs:label "records" ;
+    skos:definition "계약 안에서 되풀이되는 묶음 (예 맵의 속도선 > 점). 항목의 type struct + ref 로 쓴다." ;
+    skos:inScheme wf: .
+
+wf:includeStep a owl:ObjectProperty ;
+    rdfs:label "include" ;
+    skos:definition "경로 밖이지만 매 반복 다시 도는 곁가지 단계 (몸통에 더함)." ;
+    skos:inScheme wf: .
+
+wf:loopInputVar a owl:ObjectProperty ;
+    rdfs:label "loop_input_vars" ;
+    rdfs:comment "루프로 되돌아오는 입력 변수 (이전 반복 값). p-plan:hasInputVar 의 하위 속성으로 두지 않는다 — 두면 추론 시 순환이 다시 생긴다."@ko ;
+    skos:definition "(빌드) 루프로 되돌아오는 입력 변수 (이전 반복의 값)." ;
+    skos:inScheme wf: .
+
+wf:loopMember a owl:ObjectProperty ;
+    rdfs:label "members" ;
+    skos:definition "(빌드) 루프 몸통 단계." ;
+    skos:inScheme wf: .
+
+wf:monitorItem a owl:DatatypeProperty ;
+    rdfs:label "monitor" ;
+    skos:definition "수렴을 지켜보는 항목 '계약key.항목' (빌드가 있는지 검사)." ;
+    skos:inScheme wf: .
+
+wf:produces a owl:ObjectProperty ;
+    rdfs:label "produces" ;
+    rdfs:comment "= ^p-plan:isOutputVarOf / dcterms:conformsTo 의 지름길"@ko ;
+    skos:definition "(빌드) 내놓는 계약 지름길." ;
+    skos:inScheme wf: .
+
+wf:relatedPart a owl:DatatypeProperty ;
+    rdfs:label "related_parts" ;
+    skos:definition "(선택·사내) 이 분야에 해당하는 Tool 온톨로지 파트 약칭 — 교차 질의를 툴사용(파트×툴) 수준으로 좁힐 때." ;
+    skos:inScheme wf: .
+
+wf:usesTool a owl:ObjectProperty ;
+    rdfs:label "tools" ;
+    skos:definition "쓰는 툴 (툴 목록의 key)." ;
+    skos:inScheme wf: .
+
+wf:Component a owl:Class ;
+    rdfs:label "Component" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[a-z][a-z0-9]*(-[a-z0-9]+)*" ] ) ] ;
+            owl:onProperty wf:renamedFrom ],
+        skos:Concept ;
+    skos:definition "구성품 (고압압축기·연소기·고압터빈 …) — ⊑ skos:Concept." ;
+    skos:exactMatch wf:Component ;
+    skos:inScheme wf: .
+
+wf:Discipline a owl:Class ;
+    rdfs:label "Discipline" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[a-z][a-z0-9]*(-[a-z0-9]+)*" ] ) ] ;
+            owl:onProperty wf:renamedFrom ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty wf:relatedPart ],
+        skos:Concept ;
+    skos:definition "분야 (성능·압축기·연소기·터빈·냉각·이차유로) — ⊑ skos:Concept. 조직(파트)이 아니라 기술 분야." ;
+    skos:exactMatch wf:Discipline ;
+    skos:inScheme wf: .
+
+wf:InputBinding a owl:Class ;
+    rdfs:label "InputBinding" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:transfer ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:exchangeFormat ],
+        [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty wf:interface ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:variable ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:BindingKind ;
+            owl:onProperty wf:bindingKind ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:TransferMethod ;
+            owl:onProperty wf:transfer ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:viaTool ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:bindingKind ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[a-z0-9_+\\-]+(\\.[a-z0-9_+\\-]+)*" ] ) ] ;
+            owl:onProperty wf:exchangeFormat ] ;
+    skos:definition "단계가 받는 데이터 1건 — 어느 계약을, 어떻게(전달 방법), 어느 툴로." ;
+    skos:exactMatch wf:InputBinding ;
+    skos:inScheme wf: .
+
+wf:InterfaceItem a owl:Class ;
+    rdfs:label "InterfaceItem" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[A-Za-z][A-Za-z0-9_]*" ] ) ] ;
+            owl:onProperty wf:itemName ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ owl:unionOf ( wf:Record wf:Interface ) ] ;
+            owl:onProperty wf:structRef ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:dataType ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:isRequired ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:boolean ;
+            owl:onProperty wf:isRequired ],
+        [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty wf:itemName ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:DataType ;
+            owl:onProperty wf:dataType ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:structRef ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[a-z0-9_+\\-]+(\\.[a-z0-9_+\\-]+)*" ] ) ] ;
+            owl:onProperty wf:fileFormat ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:isList ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:minimum ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:float ;
+            owl:onProperty wf:minimum ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:boolean ;
+            owl:onProperty wf:isList ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:minItems ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty wf:unitCode ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty qudt:hasUnit ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:unitCode ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:maximum ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:anyURI ;
+            owl:onProperty qudt:hasUnit ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty wf:allowedValue ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:order ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:float ;
+            owl:onProperty wf:maximum ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:intersectionOf ( xsd:integer [ a rdfs:Datatype ;
+                                owl:onDatatype xsd:integer ;
+                                owl:withRestrictions ( [ xsd:minInclusive 0 ] ) ] ) ] ;
+            owl:onProperty wf:minItems ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:integer ;
+            owl:onProperty wf:order ] ;
+    skos:definition "데이터 계약의 항목 1개 = JSON 키 1개." ;
+    skos:exactMatch wf:InterfaceItem ;
+    skos:inScheme wf: .
+
+wf:OutputBinding a owl:Class ;
+    rdfs:label "OutputBinding" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[a-z0-9_+\\-]+(\\.[a-z0-9_+\\-]+)*" ] ) ] ;
+            owl:onProperty wf:exchangeFormat ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:exchangeFormat ],
+        [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty wf:interface ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:variable ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:viaTool ] ;
+    skos:definition "단계가 내놓는 데이터 1건." ;
+    skos:exactMatch wf:OutputBinding ;
+    skos:inScheme wf: .
+
+wf:backFrom a owl:ObjectProperty ;
+    rdfs:label "back_from" ;
+    skos:definition "루프 끝 — 여기서 되돌아간다." ;
+    skos:inScheme wf: .
+
+wf:backTo a owl:ObjectProperty ;
+    rdfs:label "back_to" ;
+    skos:definition "루프 처음 — 여기로 되돌아온다." ;
+    skos:inScheme wf: .
+
+wf:bindingKind a owl:DatatypeProperty ;
+    rdfs:label "kind" ;
+    skos:definition "(빌드) 앞 단계 / 루프 / 외부 / 생산자 없음." ;
+    skos:inScheme wf: .
+
+wf:conditionNote a owl:DatatypeProperty ;
+    rdfs:label "when" ;
+    skos:definition "조건 메모 (조건 분기는 메모로만 — 계산하지 않는다)." ;
+    skos:inScheme wf: .
+
+wf:contractStatus a owl:DatatypeProperty ;
+    rdfs:label "status" ;
+    skos:definition "계약 상태 (확정 = 동결본이 있어야 함)." ;
+    skos:inScheme wf: .
+
+wf:convergenceNote a owl:DatatypeProperty ;
+    rdfs:label "until" ;
+    skos:definition "수렴 조건 메모." ;
+    skos:inScheme wf: .
+
+wf:dataType a owl:DatatypeProperty ;
+    rdfs:label "type" ;
+    skos:definition "자료형 (생략하면 number)." ;
+    skos:inScheme wf: .
+
+wf:deliverable a owl:DatatypeProperty ;
+    rdfs:label "deliverable" ;
+    skos:definition "워크플로의 최종 산출물 (받는 단계가 없는 것이 정상)." ;
+    skos:inScheme wf: .
+
+wf:discipline a owl:ObjectProperty ;
+    rdfs:label "discipline" ;
+    rdfs:range wf:Discipline ;
+    skos:definition "분야 (계약이면 소유 분야). 생략하면 파일 머리의 discipline.",
+        "이 파일의 기본 분야 (steps·interfaces 에 discipline 이 없으면 이것)." ;
+    skos:inScheme wf: .
+
+wf:external a owl:DatatypeProperty ;
+    rdfs:label "external" ;
+    skos:definition "워크플로 밖에서 들어오는 데이터 (만드는 단계가 없는 것이 정상)." ;
+    skos:inScheme wf: .
+
+wf:hasItem a owl:ObjectProperty ;
+    rdfs:label "items" ;
+    rdfs:range wf:InterfaceItem ;
+    skos:definition "항목 (JSON 키). 한 줄 축약 '이름 → 단위 | 설명 | 선택' 은 빌드가 이 모양으로 펼친다." ;
+    skos:inScheme wf: .
+
+wf:initialValueNote a owl:DatatypeProperty ;
+    rdfs:label "initial" ;
+    skos:definition "첫 바퀴에 되돌아오는 데이터 대신 쓰는 값의 출처 메모 (예 '설계점 값, 차이 0 가정')." ;
+    skos:inScheme wf: .
+
+wf:interface a owl:ObjectProperty ;
+    rdfs:label "interface" ;
+    rdfs:range wf:Interface ;
+    skos:definition "주고받는 계약." ;
+    skos:inScheme wf: .
+
+wf:isList a owl:DatatypeProperty ;
+    rdfs:label "list" ;
+    skos:definition "값이 목록 (배열)." ;
+    skos:inScheme wf: .
+
+wf:isRequired a owl:DatatypeProperty ;
+    rdfs:label "required" ;
+    skos:definition "필수 항목 (생략하면 필수)." ;
+    skos:inScheme wf: .
+
+wf:itemName a owl:DatatypeProperty ;
+    rdfs:label "name" ;
+    skos:definition "JSON 키 (영문). 공학 기호 대문자 허용 (W2, Tt4, PR_c)." ;
+    skos:inScheme wf: .
+
+wf:jsonSchema a owl:DatatypeProperty ;
+    rdfs:label "json_schema" ;
+    skos:definition "(빌드) 생성한 계약 JSON Schema 파일 경로 (<계약 key>/<판>.schema.json)." ;
+    skos:inScheme wf: .
+
+wf:labelAtLink a owl:DatatypeProperty ;
+    rdfs:label "label_at_link" ;
+    skos:definition "TOOL ID 를 적을 때의 Tool 온톨로지 대표 이름 (스냅샷 — 바뀌면 빌드가 경고)." ;
+    skos:inScheme wf: .
+
+wf:maxIterations a owl:DatatypeProperty ;
+    rdfs:label "max_iterations" ;
+    skos:definition "최대 반복 메모." ;
+    skos:inScheme wf: .
+
+wf:maximum a owl:DatatypeProperty ;
+    rdfs:label "maximum" ;
+    skos:definition "최댓값 (선택)." ;
+    skos:inScheme wf: .
+
+wf:minItems a owl:DatatypeProperty ;
+    rdfs:label "min_items" ;
+    skos:definition "목록의 최소 개수." ;
+    skos:inScheme wf: .
+
+wf:minimum a owl:DatatypeProperty ;
+    rdfs:label "minimum" ;
+    skos:definition "최솟값 (선택)." ;
+    skos:inScheme wf: .
+
+wf:notInSurvey a owl:DatatypeProperty ;
+    rdfs:label "not_in_survey" ;
+    skos:definition "조사에 없는 툴이면 그 사유 (예 개인 스크립트)." ;
+    skos:inScheme wf: .
+
+wf:ontoTool a owl:DatatypeProperty ;
+    rdfs:label "onto_tool" ;
+    rdfs:comment "Tool 온톨로지 eg:Tool IRI (egid:TOOL-…) — 그쪽 노드에 타입·라벨을 쓰지 않는다."@ko ;
+    skos:definition "(빌드) tool_id 를 IRI 로 (egid:TOOL-…)." ;
+    skos:inScheme wf: .
+
+wf:order a owl:DatatypeProperty ;
+    rdfs:label "order" ;
+    skos:definition "(빌드) 계약·묶음 안 순서 (1부터)." ;
+    skos:inScheme wf: .
+
+wf:partOf a owl:ObjectProperty ;
+    rdfs:label "part_of" ;
+    skos:definition "상위 단계 (작업 묶음)." ;
+    skos:inScheme wf: .
+
+wf:phase a owl:DatatypeProperty ;
+    rdfs:label "phase" ;
+    skos:definition "개발 단계." ;
+    skos:inScheme wf: .
+
+wf:recordName a owl:DatatypeProperty ;
+    rdfs:label "name" ;
+    skos:definition "묶음 이름 (대문자로 시작, 예 SpeedLine)." ;
+    skos:inScheme wf: .
+
+wf:releaseReason a owl:DatatypeProperty ;
+    rdfs:label "reason" ;
+    skos:definition "동결 사유 (인명 금지)." ;
+    skos:inScheme wf: .
+
+wf:releasedAt a owl:DatatypeProperty ;
+    rdfs:label "released_at" ;
+    skos:definition "동결 일자." ;
+    skos:inScheme wf: .
+
+wf:status a owl:DatatypeProperty ;
+    rdfs:label "status" ;
+    skos:definition "작성 상태 (판정은 엔지니어)." ;
+    skos:inScheme wf: .
+
+wf:structRef a owl:DatatypeProperty ;
+    rdfs:label "ref" ;
+    skos:definition "type=struct 일 때 품는 것 — 같은 계약의 묶음 이름(SpeedLine) 또는 다른 계약 key." ;
+    skos:inScheme wf: .
+
+wf:toolId a owl:DatatypeProperty ;
+    rdfs:label "tool_id" ;
+    skos:definition "Tool 온톨로지 TOOL ID (사내 레지스트리 값 — 저장소 예시는 비워 둔다)." ;
+    skos:inScheme wf: .
+
+wf:transfer a owl:DatatypeProperty ;
+    rdfs:label "transfer" ;
+    skos:definition "전달 방법 (Tool 온톨로지 '전달 방법' 선택지와 같은 값). '메일·수기 전달' = Tool Agent 후보." ;
+    skos:inScheme wf: .
+
+wf:unitCode a owl:DatatypeProperty ;
+    rdfs:label "unit" ;
+    skos:definition "단위 표기 (config/units.yaml). number·integer 는 필수, 무차원은 1." ;
+    skos:inScheme wf: .
+
+wf:variable a owl:ObjectProperty ;
+    rdfs:label "variable" ;
+    rdfs:range wf:DataVariable ;
+    skos:definition "(빌드) P-Plan 변수." ;
+    skos:inScheme wf: .
+
+wf:viaTool a owl:ObjectProperty ;
+    rdfs:label "tool" ;
+    rdfs:range wf:ToolRef ;
+    skos:definition "단계에 툴이 여럿일 때 이 데이터를 다루는 툴." ;
+    skos:inScheme wf: .
+
+wf:Record a owl:Class ;
+    rdfs:label "Record" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty wf:recordName ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[A-Z][A-Za-z0-9_]*" ] ) ] ;
+            owl:onProperty wf:recordName ],
+        [ a owl:Restriction ;
+            owl:minCardinality 1 ;
+            owl:onProperty wf:hasItem ] ;
+    skos:definition "계약 안의 묶음 (표 모양 데이터의 한 줄). 이름은 그 계약 안에서만 유일하면 된다." ;
+    skos:exactMatch wf:Record ;
+    skos:inScheme wf: .
+
+wf:SubPlan a owl:Class ;
+    rdfs:label "SubPlan" ;
+    rdfs:subClassOf p-plan:Plan ;
+    skos:definition "(빌드) 하위 단계가 있는 단계를 펼친 하위 계획 (p-plan:isDecomposedAsPlan 의 대상)." ;
+    skos:exactMatch wf:SubPlan ;
+    skos:inScheme wf: .
+
+wf:ToolRef a owl:Class ;
+    rdfs:label "ToolRef" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty wf:notInSurvey ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:ontoTool ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:notInSurvey ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:anyURI ;
+            owl:onProperty wf:ontoTool ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty wf:labelAtLink ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:toolId ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:labelAtLink ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[a-z][a-z0-9]*(-[a-z0-9]+)*" ] ) ] ;
+            owl:onProperty wf:renamedFrom ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "TOOL-[0-9]{6}" ] ) ] ;
+            owl:onProperty wf:toolId ] ;
+    skos:definition "이 워크플로의 툴 이름표. 단계는 key 로 부르고, Tool 온톨로지 TOOL ID 는 여기 한 곳에만 사람이 적는다 (link-tools 가 후보만 제안 — HITL). 빌드는 --catalog 로 받은 survey.ttl 과 교차 확인만 한다." ;
+    skos:exactMatch wf:ToolRef ;
+    skos:inScheme wf: .
+
+wf:Workflow a owl:Class ;
+    rdfs:label "Workflow" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty wf:phase ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:DevPhase ;
+            owl:onProperty wf:phase ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[a-z][a-z0-9]*(-[a-z0-9]+)*" ] ) ] ;
+            owl:onProperty wf:renamedFrom ],
+        [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty owl:versionInfo ],
+        p-plan:Plan ;
+    skos:definition "워크플로 (예 개념설계). ⊑ p-plan:Plan ⊑ prov:Plan (alignment.ttl)." ;
+    skos:exactMatch wf:Workflow ;
+    skos:inScheme wf: .
+
+wf:DataVariable a owl:Class ;
+    rdfs:label "DataVariable" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom wf:Workflow ;
+            owl:onProperty p-plan:isVariableOfPlan ],
+        [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty dcterms:conformsTo ],
+        [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty p-plan:isVariableOfPlan ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:Interface ;
+            owl:onProperty dcterms:conformsTo ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:Step ;
+            owl:onProperty p-plan:isOutputVarOf ],
+        p-plan:Variable ;
+    skos:definition "(빌드) 워크플로 안의 데이터 1건 = (워크플로, 계약). ⊑ p-plan:Variable." ;
+    skos:exactMatch wf:DataVariable ;
+    skos:inScheme wf: .
+
+wf:exchangeFormat a owl:DatatypeProperty ;
+    rdfs:label "format" ;
+    rdfs:range [ a rdfs:Datatype ;
+            owl:onDatatype xsd:string ;
+            owl:withRestrictions ( [ xsd:pattern "[a-z0-9_+\\-]+(\\.[a-z0-9_+\\-]+)*" ] ) ] ;
+    skos:definition "이 데이터를 실제로 주고받는 파일 형식 (Tool 온톨로지 정규화 확장자 꼴 — 소문자·점 없이)." ;
+    skos:inScheme wf: .
+
+wf:renamedFrom a owl:DatatypeProperty ;
+    rdfs:label "renamed_from" ;
+    rdfs:range [ a rdfs:Datatype ;
+            owl:onDatatype xsd:string ;
+            owl:withRestrictions ( [ xsd:pattern "[a-z][a-z0-9]*(-[a-z0-9]+)*" ] ) ] ;
+    skos:definition "예전 key — 적으면 key 를 바꿔도 IRI 가 유지된다 (레지스트리가 옛 key 행을 이어받음)." ;
+    skos:inScheme wf: .
+
+wf:Interface a owl:Class ;
+    rdfs:label "Interface" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom wf:Record ;
+            owl:onProperty wf:hasRecord ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:jsonSchema ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:deliverable ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[a-z][a-z0-9]*(-[a-z0-9]+)*" ] ) ] ;
+            owl:onProperty wf:renamedFrom ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:external ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:boolean ;
+            owl:onProperty wf:deliverable ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:discipline ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:boolean ;
+            owl:onProperty wf:external ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:contractStatus ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[0-9]+\\.[0-9]+\\.[0-9]+" ] ) ] ;
+            owl:onProperty owl:versionInfo ],
+        [ a owl:Restriction ;
+            owl:cardinality 1 ;
+            owl:onProperty owl:versionInfo ],
+        [ a owl:Restriction ;
+            owl:minCardinality 1 ;
+            owl:onProperty wf:hasItem ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:ContractStatus ;
+            owl:onProperty wf:contractStatus ] ;
+    skos:definition "데이터 계약 — 단계 사이에 주고받는 데이터의 항목·단위·형식 (현재 판). 계약마다 JSON Schema(2020-12)를 생성한다. 확정한 판은 release 명령으로 동결 (InterfaceRelease)." ;
+    skos:exactMatch wf:Interface ;
+    skos:inScheme wf: .
+
+wf:Step a owl:Class ;
+    rdfs:label "Step" ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom [ owl:unionOf ( wf:Workflow wf:SubPlan ) ] ;
+            owl:onProperty p-plan:isStepOfPlan ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:InputBinding ;
+            owl:onProperty wf:hasInput ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:Step ;
+            owl:onProperty p-plan:isPrecededBy ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty p-plan:isStepOfPlan ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:ToolRef ;
+            owl:onProperty wf:usesTool ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:WorkStatus ;
+            owl:onProperty wf:status ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty wf:conditionNote ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:Step ;
+            owl:onProperty wf:partOf ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:SubPlan ;
+            owl:onProperty p-plan:isDecomposedAsPlan ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:conditionNote ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:partOf ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:status ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty wf:discipline ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:Interface ;
+            owl:onProperty wf:produces ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:OutputBinding ;
+            owl:onProperty wf:hasOutput ],
+        [ a owl:Restriction ;
+            owl:maxCardinality 1 ;
+            owl:onProperty p-plan:isDecomposedAsPlan ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:DataVariable ;
+            owl:onProperty p-plan:hasInputVar ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a rdfs:Datatype ;
+                    owl:onDatatype xsd:string ;
+                    owl:withRestrictions ( [ xsd:pattern "[a-z][a-z0-9]*(-[a-z0-9]+)*" ] ) ] ;
+            owl:onProperty wf:renamedFrom ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:Interface ;
+            owl:onProperty wf:consumes ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom wf:DataVariable ;
+            owl:onProperty wf:loopInputVar ],
+        p-plan:Step ;
+    skos:definition "워크플로 단계 (⊑ p-plan:Step). 하위 단계(part_of 로 가리킴)가 있으면 p-plan:MultiStep 이 되고 하위 계획으로 펼친다. 선후는 inputs·outputs 에서 빌드가 계산하므로 after 에는 데이터 없이 순서만 있는 선행만 적는다." ;
+    skos:exactMatch wf:Step ;
+    skos:inScheme wf: .
+
+wf: a owl:Ontology ;
+    rdfs:label "engenius_workflow" ;
+    dcterms:license "사내 전용 — 이 PC 에서는 공개 교과서 수준 예시만" ;
+    dcterms:title "En-Genius 개념설계 워크플로 온톨로지 (최종 시안 v0.1)" ;
+    pav:version "0.1.0" ;
+    owl:versionInfo "0.1.0" ;
+    skos:definition "개념설계 단계의 워크플로(단계·선후·병렬·반복 루프)와 단계 사이에 주고받는 데이터 계약(Interface)을 손으로 쓴 YAML 에서 만든다. 이 스키마 하나가 세 가지를 정한다 — ① YAML 파일의 모양 (gen-json-schema → 빌드 2층 모양 검사) ② RDF 의 술어 IRI (slot_uri → 빌드가 generated/terms.json 으로 읽음) ③ RDF 의 모양 (gen-shacl → Jena SHACL). '(빌드)' 표시 슬롯은 YAML 에 적지 않고 빌드가 계산해 RDF(derived 그래프)에 넣는다. 표준 정렬(P-Plan·PROV-O·SKOS)은 schema/alignment.ttl 에 한 방향 공리로만 둔다 (gen-owl 이 남의 어휘를 덮어쓰지 않게). ID: YAML 에서는 사람이 읽는 key 로 참조하고, RDF IRI 는 레지스트리가 주는 무의미 일련번호." .
+

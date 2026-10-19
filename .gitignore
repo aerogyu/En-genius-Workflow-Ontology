@@ -1,0 +1,29 @@
+# 실데이터 — 절대 커밋 금지 (사내 전용: 실 워크플로 YAML·_registry·_released·설정 오버레이)
+data/real/
+
+# 실행 결과·캐시
+output/
+offline/wheels/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+
+# 잠금 파일 (강제 종료로 남은 잠금이 커밋되지 않게) — requirements.lock 은 반입 목록이라 추적한다
+*.lock
+!requirements.lock
+
+# Fuseki 데이터베이스 파일
+fuseki-data/
+run/
+
+# 빌드 산출물
+*.egg-info/
+build/
+dist/
+
+# 반입 패키지 조립 폴더·zip (offline/wheels 는 위에 있음)
+offline/package*/
+offline/*.zip

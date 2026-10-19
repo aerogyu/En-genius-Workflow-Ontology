@@ -1,0 +1,790 @@
+# 자동 생성 — 직접 고치지 말 것. 원본: schema/wfo.yaml (+ alignment.ttl), 명령: python -m engenius_wf schema
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix p-plan: <http://purl.org/net/p-plan#> .
+@prefix qudt: <http://qudt.org/schema/qudt/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix wf: <http://en-genius.local/onto/wf/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+wf:InterfaceRelease a sh:NodeShape ;
+    rdfs:comment "(빌드) 계약의 동결 판 기록 — release 명령이 남긴 일자·사유 (HITL 승인 기록, 인명 없음). 옛 판 항목은 동결 파일과 옛 판 JSON Schema 로 본다." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:description "(빌드) 생성한 계약 JSON Schema 파일 경로 (<계약 key>/<판>.schema.json)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 1 ;
+            sh:path wf:jsonSchema ],
+        [ sh:datatype xsd:date ;
+            sh:description "동결 일자." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 4 ;
+            sh:path wf:releasedAt ],
+        [ sh:class wf:Interface ;
+            sh:description "어느 계약의 판인가." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 3 ;
+            sh:path dcterms:isVersionOf ],
+        [ sh:datatype xsd:string ;
+            sh:description "판." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 2 ;
+            sh:path owl:versionInfo ],
+        [ sh:datatype xsd:string ;
+            sh:description "동결 사유 (인명 금지)." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 5 ;
+            sh:path wf:releaseReason ],
+        [ sh:datatype rdf:langString ;
+            sh:description "한국어 이름 (RDF 에서 @ko)." ;
+            sh:languageIn ( "ko" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 0 ;
+            sh:path rdfs:label ] ;
+    sh:targetClass wf:InterfaceRelease .
+
+wf:Loop a sh:NodeShape ;
+    rdfs:comment "반복 루프 — 되돌아가는 간선(back_from → back_to)을 객체로 만든 것. 몸통 단계는 빌드가 계산 (back_to 에서 앞으로 가서 back_from 에 닿는 경로 위의 단계 + include). 몸통 밖인데 루프 안에서 바뀌는 데이터를 받는 단계는 '수렴 뒤 단계'(after_convergence)로 계산해 보여 준다. 수렴 조건·첫 바퀴 값은 메모 (판정은 엔지니어)." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:description "수렴을 지켜보는 항목 '계약key.항목' (빌드가 있는지 검사)." ;
+            sh:nodeKind sh:Literal ;
+            sh:order 10 ;
+            sh:path wf:monitorItem ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*\\.[A-Za-z][A-Za-z0-9_]*$" ],
+        [ sh:datatype xsd:string ;
+            sh:description "메모 (자유 텍스트 — 인명 금지, 빌드가 인명 유사 표기를 경고)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 2 ;
+            sh:path skos:note ],
+        [ sh:class wf:Interface ;
+            sh:description "(빌드) 되돌아가는 간선이 나르는 계약." ;
+            sh:nodeKind sh:IRI ;
+            sh:order 12 ;
+            sh:path wf:carries ],
+        [ sh:datatype xsd:string ;
+            sh:description "첫 바퀴에 되돌아오는 데이터 대신 쓰는 값의 출처 메모 (예 '설계점 값, 차이 0 가정')." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 7 ;
+            sh:path wf:initialValueNote ],
+        [ sh:datatype xsd:integer ;
+            sh:description "최대 반복 메모." ;
+            sh:maxCount 1 ;
+            sh:minInclusive 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 8 ;
+            sh:path wf:maxIterations ],
+        [ sh:datatype xsd:string ;
+            sh:description "수렴 조건 메모." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 6 ;
+            sh:path wf:convergenceNote ],
+        [ sh:class wf:Step ;
+            sh:description "루프 끝 — 여기서 되돌아간다." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 4 ;
+            sh:path wf:backFrom ],
+        [ sh:class wf:Step ;
+            sh:description "(빌드) 루프 몸통 단계." ;
+            sh:nodeKind sh:IRI ;
+            sh:order 11 ;
+            sh:path wf:loopMember ],
+        [ sh:datatype xsd:string ;
+            sh:description "사람이 읽는 참조 키 (영문 소문자·숫자·하이픈). YAML 안 참조에만 쓰고 RDF IRI 는 레지스트리가 준다." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 0 ;
+            sh:path skos:notation ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ],
+        [ sh:class wf:Step ;
+            sh:description "(빌드) 루프 하류 — 루프 안에서 바뀌는 데이터를 받지만 몸통 밖이라 수렴 뒤에 도는 단계." ;
+            sh:nodeKind sh:IRI ;
+            sh:order 13 ;
+            sh:path wf:afterConvergence ],
+        [ sh:class wf:Step ;
+            sh:description "루프 처음 — 여기로 되돌아온다." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 5 ;
+            sh:path wf:backTo ],
+        [ sh:class wf:Step ;
+            sh:description "경로 밖이지만 매 반복 다시 도는 곁가지 단계 (몸통에 더함)." ;
+            sh:nodeKind sh:IRI ;
+            sh:order 9 ;
+            sh:path wf:includeStep ],
+        [ sh:datatype rdf:langString ;
+            sh:description "한국어 이름 (RDF 에서 @ko)." ;
+            sh:languageIn ( "ko" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:description "예전 key — 적으면 key 를 바꿔도 IRI 가 유지된다 (레지스트리가 옛 key 행을 이어받음)." ;
+            sh:nodeKind sh:Literal ;
+            sh:order 3 ;
+            sh:path wf:renamedFrom ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ] ;
+    sh:targetClass wf:Loop .
+
+wf:InputBinding a sh:NodeShape ;
+    rdfs:comment "단계가 받는 데이터 1건 — 어느 계약을, 어떻게(전달 방법), 어느 툴로." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:class wf:ToolRef ;
+            sh:description "단계에 툴이 여럿일 때 이 데이터를 다루는 툴." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 1 ;
+            sh:path wf:viaTool ],
+        [ sh:description "(빌드) 앞 단계 / 루프 / 외부 / 생산자 없음." ;
+            sh:in ( "앞 단계" "루프" "외부" "생산자 없음" ) ;
+            sh:maxCount 1 ;
+            sh:order 6 ;
+            sh:path wf:bindingKind ],
+        [ sh:class wf:Interface ;
+            sh:description "주고받는 계약." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 0 ;
+            sh:path wf:interface ],
+        [ sh:class wf:DataVariable ;
+            sh:description "(빌드) P-Plan 변수." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:BlankNodeOrIRI ;
+            sh:order 4 ;
+            sh:path wf:variable ],
+        [ sh:datatype xsd:string ;
+            sh:description "이 데이터를 실제로 주고받는 파일 형식 (Tool 온톨로지 정규화 확장자 꼴 — 소문자·점 없이)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 2 ;
+            sh:path wf:exchangeFormat ;
+            sh:pattern "^[a-z0-9_+\\-]+(\\.[a-z0-9_+\\-]+)*$" ],
+        [ sh:description "전달 방법 (Tool 온톨로지 '전달 방법' 선택지와 같은 값). '메일·수기 전달' = Tool Agent 후보." ;
+            sh:in ( "파일 저장" "PDM 등록" "DB 기록" "메일·수기 전달" "타 SW 직접 연동" "미상" ) ;
+            sh:maxCount 1 ;
+            sh:order 5 ;
+            sh:path wf:transfer ],
+        [ sh:datatype xsd:string ;
+            sh:description "메모 (자유 텍스트 — 인명 금지, 빌드가 인명 유사 표기를 경고)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 3 ;
+            sh:path skos:note ] ;
+    sh:targetClass wf:InputBinding .
+
+wf:OutputBinding a sh:NodeShape ;
+    rdfs:comment "단계가 내놓는 데이터 1건." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:class wf:ToolRef ;
+            sh:description "단계에 툴이 여럿일 때 이 데이터를 다루는 툴." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 1 ;
+            sh:path wf:viaTool ],
+        [ sh:class wf:Interface ;
+            sh:description "주고받는 계약." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 0 ;
+            sh:path wf:interface ],
+        [ sh:class wf:DataVariable ;
+            sh:description "(빌드) P-Plan 변수." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:BlankNodeOrIRI ;
+            sh:order 4 ;
+            sh:path wf:variable ],
+        [ sh:datatype xsd:string ;
+            sh:description "이 데이터를 실제로 주고받는 파일 형식 (Tool 온톨로지 정규화 확장자 꼴 — 소문자·점 없이)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 2 ;
+            sh:path wf:exchangeFormat ;
+            sh:pattern "^[a-z0-9_+\\-]+(\\.[a-z0-9_+\\-]+)*$" ],
+        [ sh:datatype xsd:string ;
+            sh:description "메모 (자유 텍스트 — 인명 금지, 빌드가 인명 유사 표기를 경고)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 3 ;
+            sh:path skos:note ] ;
+    sh:targetClass wf:OutputBinding .
+
+wf:Component a sh:NodeShape ;
+    rdfs:comment "구성품 (고압압축기·연소기·고압터빈 …) — ⊑ skos:Concept." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:description "메모 (자유 텍스트 — 인명 금지, 빌드가 인명 유사 표기를 경고)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 2 ;
+            sh:path skos:note ],
+        [ sh:class wf:Component ;
+            sh:description "상위 구성품." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 4 ;
+            sh:path skos:broader ],
+        [ sh:datatype xsd:string ;
+            sh:description "사람이 읽는 참조 키 (영문 소문자·숫자·하이픈). YAML 안 참조에만 쓰고 RDF IRI 는 레지스트리가 준다." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 0 ;
+            sh:path skos:notation ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ],
+        [ sh:datatype rdf:langString ;
+            sh:description "한국어 이름 (RDF 에서 @ko)." ;
+            sh:languageIn ( "ko" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:description "예전 key — 적으면 key 를 바꿔도 IRI 가 유지된다 (레지스트리가 옛 key 행을 이어받음)." ;
+            sh:nodeKind sh:Literal ;
+            sh:order 3 ;
+            sh:path wf:renamedFrom ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ] ;
+    sh:targetClass wf:Component .
+
+wf:Discipline a sh:NodeShape ;
+    rdfs:comment "분야 (성능·압축기·연소기·터빈·냉각·이차유로) — ⊑ skos:Concept. 조직(파트)이 아니라 기술 분야." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:description "(선택·사내) 이 분야에 해당하는 Tool 온톨로지 파트 약칭 — 교차 질의를 툴사용(파트×툴) 수준으로 좁힐 때." ;
+            sh:nodeKind sh:Literal ;
+            sh:order 4 ;
+            sh:path wf:relatedPart ],
+        [ sh:datatype xsd:string ;
+            sh:description "메모 (자유 텍스트 — 인명 금지, 빌드가 인명 유사 표기를 경고)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 2 ;
+            sh:path skos:note ],
+        [ sh:datatype xsd:string ;
+            sh:description "사람이 읽는 참조 키 (영문 소문자·숫자·하이픈). YAML 안 참조에만 쓰고 RDF IRI 는 레지스트리가 준다." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 0 ;
+            sh:path skos:notation ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ],
+        [ sh:datatype rdf:langString ;
+            sh:description "한국어 이름 (RDF 에서 @ko)." ;
+            sh:languageIn ( "ko" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:description "예전 key — 적으면 key 를 바꿔도 IRI 가 유지된다 (레지스트리가 옛 key 행을 이어받음)." ;
+            sh:nodeKind sh:Literal ;
+            sh:order 3 ;
+            sh:path wf:renamedFrom ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ] ;
+    sh:targetClass wf:Discipline .
+
+wf:InterfaceItem a sh:NodeShape ;
+    rdfs:comment "데이터 계약의 항목 1개 = JSON 키 1개." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:datatype xsd:boolean ;
+            sh:description "값이 목록 (배열)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 4 ;
+            sh:path wf:isList ],
+        [ sh:description "type=struct 일 때 품는 것 — 같은 계약의 묶음 이름(SpeedLine) 또는 다른 계약 key." ;
+            sh:maxCount 1 ;
+            sh:or ( [ sh:class wf:Record ] [ sh:class wf:Interface ] ) ;
+            sh:order 11 ;
+            sh:path wf:structRef ],
+        [ sh:datatype xsd:integer ;
+            sh:description "목록의 최소 개수." ;
+            sh:maxCount 1 ;
+            sh:minInclusive 0 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 5 ;
+            sh:path wf:minItems ],
+        [ sh:datatype xsd:integer ;
+            sh:description "(빌드) 계약·묶음 안 순서 (1부터)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 14 ;
+            sh:path wf:order ],
+        [ sh:datatype xsd:string ;
+            sh:description "type=enum 일 때 허용 값." ;
+            sh:nodeKind sh:Literal ;
+            sh:order 7 ;
+            sh:path wf:allowedValue ],
+        [ sh:datatype xsd:boolean ;
+            sh:defaultValue true ;
+            sh:description "필수 항목 (생략하면 필수)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 6 ;
+            sh:path wf:isRequired ],
+        [ sh:datatype xsd:float ;
+            sh:description "최댓값 (선택)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 10 ;
+            sh:path wf:maximum ],
+        [ sh:description "(빌드) QUDT 단위 IRI." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 13 ;
+            sh:path qudt:hasUnit ],
+        [ sh:datatype xsd:string ;
+            sh:description "설명." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 12 ;
+            sh:path skos:definition ],
+        [ sh:datatype xsd:string ;
+            sh:description "단위 표기 (config/units.yaml). number·integer 는 필수, 무차원은 1." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 3 ;
+            sh:path wf:unitCode ],
+        [ sh:defaultValue "number" ;
+            sh:description "자료형 (생략하면 number)." ;
+            sh:in ( "number" "integer" "string" "boolean" "enum" "file" "struct" ) ;
+            sh:maxCount 1 ;
+            sh:order 2 ;
+            sh:path wf:dataType ],
+        [ sh:datatype xsd:float ;
+            sh:description "최솟값 (선택)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 9 ;
+            sh:path wf:minimum ],
+        [ sh:datatype xsd:string ;
+            sh:description "JSON 키 (영문). 공학 기호 대문자 허용 (W2, Tt4, PR_c)." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 1 ;
+            sh:path wf:itemName ;
+            sh:pattern "^[A-Za-z][A-Za-z0-9_]*$" ],
+        [ sh:datatype rdf:langString ;
+            sh:description "한국어 이름 (RDF 에서 @ko)." ;
+            sh:languageIn ( "ko" ) ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 0 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:description "type=file 일 때 확장자 (Tool 온톨로지 정규화 확장자 꼴 — 소문자, 점 없이, 다중 확장자 cas.h5 허용)." ;
+            sh:nodeKind sh:Literal ;
+            sh:order 8 ;
+            sh:path wf:fileFormat ;
+            sh:pattern "^[a-z0-9_+\\-]+(\\.[a-z0-9_+\\-]+)*$" ] ;
+    sh:targetClass wf:InterfaceItem .
+
+wf:Record a sh:NodeShape ;
+    rdfs:comment "계약 안의 묶음 (표 모양 데이터의 한 줄). 이름은 그 계약 안에서만 유일하면 된다." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:description "묶음 이름 (대문자로 시작, 예 SpeedLine)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 2 ;
+            sh:path wf:recordName ;
+            sh:pattern "^[A-Z][A-Za-z0-9_]*$" ],
+        [ sh:datatype rdf:langString ;
+            sh:description "한국어 이름 (RDF 에서 @ko)." ;
+            sh:languageIn ( "ko" ) ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 0 ;
+            sh:path rdfs:label ],
+        [ sh:class wf:InterfaceItem ;
+            sh:description "항목 (JSON 키). 한 줄 축약 '이름 → 단위 | 설명 | 선택' 은 빌드가 이 모양으로 펼친다." ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:BlankNodeOrIRI ;
+            sh:order 1 ;
+            sh:path wf:hasItem ] ;
+    sh:targetClass wf:Record .
+
+wf:SubPlan a sh:NodeShape ;
+    rdfs:comment "(빌드) 하위 단계가 있는 단계를 펼친 하위 계획 (p-plan:isDecomposedAsPlan 의 대상)." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:description "사람이 읽는 참조 키 (영문 소문자·숫자·하이픈). YAML 안 참조에만 쓰고 RDF IRI 는 레지스트리가 준다." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 0 ;
+            sh:path skos:notation ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ],
+        [ sh:datatype rdf:langString ;
+            sh:description "한국어 이름 (RDF 에서 @ko)." ;
+            sh:languageIn ( "ko" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 1 ;
+            sh:path rdfs:label ] ;
+    sh:targetClass wf:SubPlan .
+
+wf:Workflow a sh:NodeShape ;
+    rdfs:comment "워크플로 (예 개념설계). ⊑ p-plan:Plan ⊑ prov:Plan (alignment.ttl)." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:description "메모 (자유 텍스트 — 인명 금지, 빌드가 인명 유사 표기를 경고)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 2 ;
+            sh:path skos:note ],
+        [ sh:description "개발 단계." ;
+            sh:in ( "개념설계" "기본설계" "상세설계" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:order 5 ;
+            sh:path wf:phase ],
+        [ sh:datatype xsd:string ;
+            sh:description "판." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 4 ;
+            sh:path owl:versionInfo ],
+        [ sh:datatype xsd:string ;
+            sh:description "사람이 읽는 참조 키 (영문 소문자·숫자·하이픈). YAML 안 참조에만 쓰고 RDF IRI 는 레지스트리가 준다." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 0 ;
+            sh:path skos:notation ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ],
+        [ sh:datatype rdf:langString ;
+            sh:description "한국어 이름 (RDF 에서 @ko)." ;
+            sh:languageIn ( "ko" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:description "예전 key — 적으면 key 를 바꿔도 IRI 가 유지된다 (레지스트리가 옛 key 행을 이어받음)." ;
+            sh:nodeKind sh:Literal ;
+            sh:order 3 ;
+            sh:path wf:renamedFrom ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ] ;
+    sh:targetClass wf:Workflow .
+
+wf:ToolRef a sh:NodeShape ;
+    rdfs:comment "이 워크플로의 툴 이름표. 단계는 key 로 부르고, Tool 온톨로지 TOOL ID 는 여기 한 곳에만 사람이 적는다 (link-tools 가 후보만 제안 — HITL). 빌드는 --catalog 로 받은 survey.ttl 과 교차 확인만 한다." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:description "Tool 온톨로지 TOOL ID (사내 레지스트리 값 — 저장소 예시는 비워 둔다)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 4 ;
+            sh:path wf:toolId ;
+            sh:pattern "^TOOL-[0-9]{6}$" ],
+        [ sh:datatype xsd:string ;
+            sh:description "메모 (자유 텍스트 — 인명 금지, 빌드가 인명 유사 표기를 경고)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 2 ;
+            sh:path skos:note ],
+        [ sh:description "(빌드) tool_id 를 IRI 로 (egid:TOOL-…)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 7 ;
+            sh:path wf:ontoTool ],
+        [ sh:datatype xsd:string ;
+            sh:description "조사에 없는 툴이면 그 사유 (예 개인 스크립트)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 6 ;
+            sh:path wf:notInSurvey ],
+        [ sh:datatype xsd:string ;
+            sh:description "TOOL ID 를 적을 때의 Tool 온톨로지 대표 이름 (스냅샷 — 바뀌면 빌드가 경고)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 5 ;
+            sh:path wf:labelAtLink ],
+        [ sh:datatype xsd:string ;
+            sh:description "사람이 읽는 참조 키 (영문 소문자·숫자·하이픈). YAML 안 참조에만 쓰고 RDF IRI 는 레지스트리가 준다." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 0 ;
+            sh:path skos:notation ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ],
+        [ sh:datatype rdf:langString ;
+            sh:description "한국어 이름 (RDF 에서 @ko)." ;
+            sh:languageIn ( "ko" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:description "예전 key — 적으면 key 를 바꿔도 IRI 가 유지된다 (레지스트리가 옛 key 행을 이어받음)." ;
+            sh:nodeKind sh:Literal ;
+            sh:order 3 ;
+            sh:path wf:renamedFrom ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ] ;
+    sh:targetClass wf:ToolRef .
+
+wf:DataVariable a sh:NodeShape ;
+    rdfs:comment "(빌드) 워크플로 안의 데이터 1건 = (워크플로, 계약). ⊑ p-plan:Variable." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:class wf:Interface ;
+            sh:description "이 변수가 따르는 데이터 계약." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 1 ;
+            sh:path dcterms:conformsTo ],
+        [ sh:class wf:Step ;
+            sh:description "실제로 만드는 단계 (하위 단계가 있으면 가장 깊은 단계 하나 — 상위 단계 선언은 경계 표시)." ;
+            sh:nodeKind sh:IRI ;
+            sh:order 3 ;
+            sh:path p-plan:isOutputVarOf ],
+        [ sh:datatype rdf:langString ;
+            sh:description "한국어 이름 (RDF 에서 @ko)." ;
+            sh:languageIn ( "ko" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 0 ;
+            sh:path rdfs:label ],
+        [ sh:class wf:Workflow ;
+            sh:description "속한 워크플로." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 2 ;
+            sh:path p-plan:isVariableOfPlan ] ;
+    sh:targetClass wf:DataVariable .
+
+wf:Interface a sh:NodeShape ;
+    rdfs:comment "데이터 계약 — 단계 사이에 주고받는 데이터의 항목·단위·형식 (현재 판). 계약마다 JSON Schema(2020-12)를 생성한다. 확정한 판은 release 명령으로 동결 (InterfaceRelease)." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:datatype xsd:boolean ;
+            sh:description "워크플로의 최종 산출물 (받는 단계가 없는 것이 정상)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 10 ;
+            sh:path wf:deliverable ],
+        [ sh:datatype xsd:string ;
+            sh:description "(빌드) 생성한 계약 JSON Schema 파일 경로 (<계약 key>/<판>.schema.json)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 6 ;
+            sh:path wf:jsonSchema ],
+        [ sh:description "계약 상태 (확정 = 동결본이 있어야 함)." ;
+            sh:in ( "초안" "검토중" "확정" "대체됨" ) ;
+            sh:maxCount 1 ;
+            sh:order 8 ;
+            sh:path wf:contractStatus ],
+        [ sh:class wf:Discipline ;
+            sh:description "분야 (계약이면 소유 분야). 생략하면 파일 머리의 discipline." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 2 ;
+            sh:path wf:discipline ],
+        [ sh:datatype xsd:boolean ;
+            sh:description "워크플로 밖에서 들어오는 데이터 (만드는 단계가 없는 것이 정상)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 9 ;
+            sh:path wf:external ],
+        [ sh:class wf:Record ;
+            sh:description "계약 안에서 되풀이되는 묶음 (예 맵의 속도선 > 점). 항목의 type struct + ref 로 쓴다." ;
+            sh:nodeKind sh:IRI ;
+            sh:order 11 ;
+            sh:path wf:hasRecord ],
+        [ sh:datatype xsd:string ;
+            sh:description "메모 (자유 텍스트 — 인명 금지, 빌드가 인명 유사 표기를 경고)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 3 ;
+            sh:path skos:note ],
+        [ sh:datatype rdf:langString ;
+            sh:description "한국어 이름 (RDF 에서 @ko)." ;
+            sh:languageIn ( "ko" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:description "사람이 읽는 참조 키 (영문 소문자·숫자·하이픈). YAML 안 참조에만 쓰고 RDF IRI 는 레지스트리가 준다." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 0 ;
+            sh:path skos:notation ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ],
+        [ sh:datatype xsd:string ;
+            sh:description "예전 key — 적으면 key 를 바꿔도 IRI 가 유지된다 (레지스트리가 옛 key 행을 이어받음)." ;
+            sh:nodeKind sh:Literal ;
+            sh:order 4 ;
+            sh:path wf:renamedFrom ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ],
+        [ sh:class wf:InterfaceItem ;
+            sh:description "항목 (JSON 키). 한 줄 축약 '이름 → 단위 | 설명 | 선택' 은 빌드가 이 모양으로 펼친다." ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:BlankNodeOrIRI ;
+            sh:order 5 ;
+            sh:path wf:hasItem ],
+        [ sh:datatype xsd:string ;
+            sh:description "계약 판 MAJOR.MINOR.PATCH (예 0.1.0). 동결본과 비교해 필요한 올림을 빌드가 계산한다." ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 7 ;
+            sh:path owl:versionInfo ;
+            sh:pattern "^[0-9]+\\.[0-9]+\\.[0-9]+$" ] ;
+    sh:targetClass wf:Interface .
+
+wf:Step a sh:NodeShape ;
+    rdfs:comment "워크플로 단계 (⊑ p-plan:Step). 하위 단계(part_of 로 가리킴)가 있으면 p-plan:MultiStep 이 되고 하위 계획으로 펼친다. 선후는 inputs·outputs 에서 빌드가 계산하므로 after 에는 데이터 없이 순서만 있는 선행만 적는다." ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) ;
+    sh:property [ sh:class wf:ToolRef ;
+            sh:description "쓰는 툴 (툴 목록의 key)." ;
+            sh:nodeKind sh:IRI ;
+            sh:order 10 ;
+            sh:path wf:usesTool ],
+        [ sh:class wf:Interface ;
+            sh:description "(빌드) 받는 계약 지름길." ;
+            sh:nodeKind sh:IRI ;
+            sh:order 14 ;
+            sh:path wf:consumes ],
+        [ sh:description "(빌드) 속한 계획 — 최상위 단계는 워크플로, 하위 단계는 상위 단계의 하위 계획." ;
+            sh:maxCount 1 ;
+            sh:or ( [ sh:class wf:Workflow ] [ sh:class wf:SubPlan ] ) ;
+            sh:order 6 ;
+            sh:path p-plan:isStepOfPlan ],
+        [ sh:class wf:Discipline ;
+            sh:description "분야 (계약이면 소유 분야). 생략하면 파일 머리의 discipline." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 2 ;
+            sh:path wf:discipline ],
+        [ sh:class wf:Interface ;
+            sh:description "(빌드) 내놓는 계약 지름길." ;
+            sh:nodeKind sh:IRI ;
+            sh:order 15 ;
+            sh:path wf:produces ],
+        [ sh:class wf:InputBinding ;
+            sh:description "받는 데이터 — 짧게는 계약 key 만 (빌드가 {interface - key} 로 펼침)." ;
+            sh:nodeKind sh:BlankNodeOrIRI ;
+            sh:order 11 ;
+            sh:path wf:hasInput ],
+        [ sh:datatype xsd:string ;
+            sh:description "조건 메모 (조건 분기는 메모로만 — 계산하지 않는다)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 13 ;
+            sh:path wf:conditionNote ],
+        [ sh:class wf:OutputBinding ;
+            sh:description "내놓는 데이터 — 짧게는 계약 key 만." ;
+            sh:nodeKind sh:BlankNodeOrIRI ;
+            sh:order 12 ;
+            sh:path wf:hasOutput ],
+        [ sh:datatype xsd:string ;
+            sh:description "메모 (자유 텍스트 — 인명 금지, 빌드가 인명 유사 표기를 경고)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 4 ;
+            sh:path skos:note ],
+        [ sh:class wf:Component ;
+            sh:description "관련 구성품." ;
+            sh:nodeKind sh:IRI ;
+            sh:order 3 ;
+            sh:path wf:component ],
+        [ sh:description "작성 상태 (판정은 엔지니어)." ;
+            sh:in ( "초안" "검토중" "확정" ) ;
+            sh:maxCount 1 ;
+            sh:order 7 ;
+            sh:path wf:status ],
+        [ sh:class wf:DataVariable ;
+            sh:description "(빌드) 루프로 되돌아오는 입력 변수 (이전 반복의 값)." ;
+            sh:nodeKind sh:BlankNodeOrIRI ;
+            sh:order 17 ;
+            sh:path wf:loopInputVar ],
+        [ sh:class wf:SubPlan ;
+            sh:description "(빌드) 하위 단계가 있으면 그 하위 계획." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 18 ;
+            sh:path p-plan:isDecomposedAsPlan ],
+        [ sh:datatype xsd:string ;
+            sh:description "사람이 읽는 참조 키 (영문 소문자·숫자·하이픈). YAML 안 참조에만 쓰고 RDF IRI 는 레지스트리가 준다." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 0 ;
+            sh:path skos:notation ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ],
+        [ sh:class wf:Step ;
+            sh:description "상위 단계 (작업 묶음)." ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:order 8 ;
+            sh:path wf:partOf ],
+        [ sh:class wf:DataVariable ;
+            sh:description "(빌드) P-Plan 입력 변수 — 루프로 되돌아오는 입력은 넣지 않는다 (P-Plan 변수 그래프를 DAG 로)." ;
+            sh:nodeKind sh:BlankNodeOrIRI ;
+            sh:order 16 ;
+            sh:path p-plan:hasInputVar ],
+        [ sh:class wf:Step ;
+            sh:description "순서만 있는 선행 단계. 데이터로 이어진 선후는 빌드가 inputs 로 도출해 derived 그래프의 같은 술어에 넣는다 (루프로 되돌아가는 간선은 넣지 않는다 → 늘 DAG)." ;
+            sh:nodeKind sh:IRI ;
+            sh:order 9 ;
+            sh:path p-plan:isPrecededBy ],
+        [ sh:datatype rdf:langString ;
+            sh:description "한국어 이름 (RDF 에서 @ko)." ;
+            sh:languageIn ( "ko" ) ;
+            sh:maxCount 1 ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:Literal ;
+            sh:order 1 ;
+            sh:path rdfs:label ],
+        [ sh:datatype xsd:string ;
+            sh:description "예전 key — 적으면 key 를 바꿔도 IRI 가 유지된다 (레지스트리가 옛 key 행을 이어받음)." ;
+            sh:nodeKind sh:Literal ;
+            sh:order 5 ;
+            sh:path wf:renamedFrom ;
+            sh:pattern "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" ] ;
+    sh:targetClass wf:Step .
+

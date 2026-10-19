@@ -1,0 +1,36 @@
+# 쓸 수 있는 단위 — 왼쪽 = YAML 에 적는 표기 (UCUM 에 가깝게, rpm 만 관용).
+# qudt = QUDT 단위 IRI 꼬리 (http://qudt.org/vocab/unit/<꼬리>) — QUDT 데이터는 반입하지 않고 이름만 쓴다 (기억 기반: W1 에서 원본 대조).
+# kind = 물리량 종류 (같은 kind 끼리만 환산 가능). factor·offset = SI 기본 단위로 환산 (값 × factor + offset) — 지금은 문서·나중 어댑터용.
+# 절대온도(K)와 온도차(dK)는 다른 kind. 압력은 절대압 기준 — 게이지압이면 항목 설명에 적는다.
+# 목록에 없는 단위는 빌드 오류 + 비슷한 표기 제안. 새 단위는 여기에 한 줄 추가 (사내에서 코드 수정 없이).
+units:
+  "1":      {qudt: UNITLESS,       kind: 무차원,   label: 무차원}
+  "%":      {qudt: PERCENT,        kind: 무차원,   label: 퍼센트, factor: 0.01}
+  K:        {qudt: K,              kind: 온도,     label: 켈빈}
+  degC:     {qudt: DEG_C,          kind: 온도,     label: 섭씨, offset: 273.15}
+  dK:       {qudt: K,              kind: 온도차,   label: 온도차 켈빈}
+  Pa:       {qudt: PA,             kind: 압력,     label: 파스칼}
+  kPa:      {qudt: KiloPA,         kind: 압력,     label: 킬로파스칼, factor: 1000}
+  MPa:      {qudt: MegaPA,         kind: 압력,     label: 메가파스칼, factor: 1000000}
+  bar:      {qudt: BAR,            kind: 압력,     label: 바, factor: 100000}
+  kg/s:     {qudt: KiloGM-PER-SEC, kind: 질량유량, label: kg/s}
+  m:        {qudt: M,              kind: 길이,     label: 미터}
+  mm:       {qudt: MilliM,         kind: 길이,     label: 밀리미터, factor: 0.001}
+  m2:       {qudt: M2,             kind: 면적,     label: 제곱미터}
+  m/s:      {qudt: M-PER-SEC,      kind: 속도,     label: m/s}
+  deg:      {qudt: DEG,            kind: 각도,     label: 도, factor: 0.0174532925}
+  rpm:      {qudt: REV-PER-MIN,    kind: 회전속도, label: rpm, factor: 0.104719755}
+  s:        {qudt: SEC,            kind: 시간,     label: 초}
+  kW:       {qudt: KiloW,          kind: 동력,     label: 킬로와트, factor: 1000}
+  MW:       {qudt: MegaW,          kind: 동력,     label: 메가와트, factor: 1000000}
+  N:        {qudt: N,              kind: 힘,       label: 뉴턴}
+  kN:       {qudt: KiloN,          kind: 힘,       label: 킬로뉴턴, factor: 1000}
+  J/kg:     {qudt: J-PER-KiloGM,   kind: 비에너지, label: J/kg}
+  J/(kg.K): {qudt: J-PER-KiloGM-K, kind: 비열,     label: "J/(kg·K)"}
+# 표기 별칭 — 받아 주되 참고 메시지로 정식 표기를 알려 준다 (대소문자만 다른 것은 자동으로 고치지 않는다: MPa ≠ mPa)
+aliases:
+  퍼센트: "%"
+  pct: "%"
+  무차원: "1"
+  r/min: rpm
+  kg/sec: kg/s
