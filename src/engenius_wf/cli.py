@@ -108,7 +108,7 @@ def cmd_release(a: argparse.Namespace) -> int:
     except ConfigError as e:
         return _config_error(e)
     if ctx:
-        do_release(ctx["m"], src, a.key, a.reason, rep)
+        do_release(ctx["m"], src, a.key, a.reason, rep, rules=ctx["rules"], renames=ctx["registry"].renames)
     print(rep.render())
     return 1 if rep.errors else 0
 

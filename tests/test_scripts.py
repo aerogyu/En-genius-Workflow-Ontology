@@ -4,6 +4,7 @@ selftest 요약(값 없음)을 고정한다. .bat 자체를 cmd 로 돌리는 �
 from __future__ import annotations
 
 import importlib.util
+import json
 import re
 from pathlib import Path
 
@@ -147,6 +148,18 @@ def test_release_defaults_and_prompts(sandbox, tmp_path, monkeypatch, capsys):
     monkeypatch.setattr("builtins.input", lambda prompt="": "")
     assert H.main(["release", str(d), "if-cycle-dp"]) == 2                      # 사유 없음 → 아무것도 바꾸지 않는다
     assert not (d / "_released" / "if-cycle-dp").exists()
+
+
+def test_release_reasks_when_reason_has_person_name(sandbox, tmp_path, monkeypatch, capsys):
+    """사유에 인명 유사 표기 → 값을 되비추지 않고 다시 묻는다 (W1 검토 수리, 절대 규칙 5)."""
+    d = copy_example(tmp_path, "short", state=False)
+    answers = iter(["홍길동 책임 확인", "개념설계 1차 검토 통과 (예시)"])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
+    assert H.main(["release", str(d), "if-cycle-dp"]) == 0
+    out = capsys.readouterr().out
+    assert "사유에 인명으로 보이는 표기가 있다" in out and "홍길동" not in out
+    rel = json.loads((d / "_released" / "if-cycle-dp" / "0.1.0.json").read_text(encoding="utf-8"))
+    assert rel["reason"] == "개념설계 1차 검토 통과 (예시)"
 
 
 def test_installed_commit(tmp_path):

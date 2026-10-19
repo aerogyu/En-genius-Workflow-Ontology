@@ -256,6 +256,11 @@ def check_items(m, units, aliases, rep: Report):
 PERSON_TEXT = ("label", "note", "when", "until", "initial", "description", "not_in_survey")
 
 
+def person_hit(text, rules) -> bool:
+    """자유 텍스트에 인명 유사 표기가 있나 (config/rules.yaml person_patterns) — YAML 칸(P01)·release 사유(V06)가 같이 쓴다."""
+    return isinstance(text, str) and any(re.search(p, text) for p in rules["person_patterns"])
+
+
 def check_person(files, rules, rep: Report):
     pats = [re.compile(p) for p in rules["person_patterns"]]
 

@@ -279,7 +279,17 @@ def do_release(args) -> int:
         if not key:
             raise Stop("계약 key 가 비었다 — 아무것도 바꾸지 않았다")
     if not reason:
-        reason = ask("동결 사유 (일자는 자동으로 남는다. 인명은 적지 않는다): ")
+        from engenius_wf.checks import person_hit
+        from engenius_wf.pipeline import resolve_overlay
+
+        rules = config.load_rules(overlay_dir=resolve_overlay(src))
+        prompt = "동결 사유 (일자는 자동으로 남는다. 인명·직급은 적지 않는다): "
+        reason = ask(prompt)
+        for _ in range(3):                     # 인명 유사 표기면 다시 묻는다 (값은 되비추지 않는다) — 끝내 그러면 release 가 V06 으로 거절
+            if not reason or not person_hit(reason, rules):
+                break
+            print("[release] 사유에 인명으로 보이는 표기가 있다 — 무엇을 확인했는지만 다시 적는다 (예: 개념설계 1차 검토 통과)")
+            reason = ask(prompt)
         if not reason:
             raise Stop("동결 사유가 비었다 — 아무것도 바꾸지 않았다 (사유가 HITL 기록이다)")
     return cli.main(["release", str(src), key, "--reason", reason])

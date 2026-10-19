@@ -1,7 +1,8 @@
 """계약별 JSON Schema (2020-12, 직접 생성) · 골격 예시 · 실제 데이터 검사(validate).
 
 봉투: {contract, version, produced_by, case, iteration, data} — data 는 닫힌 객체, 항목마다 x-unit·x-qudt-unit.
-iteration 0 = 첫 바퀴 가정값(Loop.initial). 파일 확장자 검사는 대소문자를 가리지 않는다. 동결된 옛 판의 스키마도 계속 만든다.
+iteration 0 = 첫 바퀴 가정값(Loop.initial). 파일 확장자 검사는 대소문자를 가리지 않는다. 동결된 옛 판의 스키마도 계속 만들고,
+동결된 판(현재 판 포함)은 동결본의 정의로 만든다 (품은 계약도 동결본의 스냅샷으로).
 코드: C09 골격 예시가 자기 스키마를 통과 못함(경고) · J00 통과 · J01 JSON 읽기 실패 · J02 계약·판 스키마 없음 · J03 계약 위반.
 """
 
@@ -16,18 +17,21 @@ import jsonschema
 from engenius_wf.checks import ln
 from engenius_wf.model import EGID, UNIT
 from engenius_wf.report import Report, suggest
-from engenius_wf.versioning import canon_def
+from engenius_wf.versioning import canon_def, resolve_ref
 
 
 def ci_ext(e):
     return "".join(f"[{c.lower()}{c.upper()}]" if c.isalpha() else re.escape(c) for c in e)
 
 
-def contract_schema(d, m, units, ifc_iri=None):
-    """d = canon_def 꼴 (현재 판 또는 동결본). 봉투(contract·version·produced_by·case·iteration·data) + data 는 닫힌 객체."""
+def contract_schema(d, m, units, ifc_iri=None, key=None):
+    """d = canon_def 꼴 (현재 판 또는 동결본). 봉투(contract·version·produced_by·case·iteration·data) + data 는 닫힌 객체.
+    key = 봉투의 계약 key (개명한 계약의 동결본이면 지금 key — 없으면 d 의 key).
+    $defs 이름: 이 계약의 묶음 = 묶음 이름(SpeedLine), 품은 다른 계약 = 그 계약 key(+ x-interface 판), 그 계약의 묶음 = '계약key.묶음' —
+    두 계약에 같은 이름의 묶음이 있어도 섞이지 않는다. 품은 계약은 동결본의 스냅샷(refs)을 먼저, 없으면 지금 YAML 을 쓴다."""
     defs = {}
 
-    def obj(items, title):
+    def obj(items, title, scope, pfx):
         props, req = {}, []
         for it in items:
             t = it.get("type", "number")
@@ -40,16 +44,17 @@ def contract_schema(d, m, units, ifc_iri=None):
                 p = {"type": "string"} | ({"pattern": rf"\.({'|'.join(ci_ext(e) for e in exts)})$"} if exts else {})
             else:
                 r = it["ref"]
-                name = r if r in recs else f"{r}"
+                got = resolve_ref(scope, r, m)
+                if got is None:                       # check_versions(V10)·check_items(C03) 가 먼저 막는다
+                    raise KeyError(f"struct ref '{r}' 를 찾을 수 없다")
+                kind, x = got
+                name = pfx + r if kind == "rec" else r
                 if name not in defs:
                     defs[name] = None
-                    if r in recs:
-                        defs[name] = obj(recs[r]["items"], recs[r].get("label") or r)
+                    if kind == "rec":
+                        defs[name] = obj(x["items"], x.get("label") or r, scope, pfx)
                     else:
-                        sub = canon_def(m["interface"][r])
-                        for rr in sub["records"]:
-                            recs.setdefault(rr["name"], rr)
-                        defs[name] = obj(sub["items"], sub["label"])
+                        defs[name] = obj(x["items"], x["label"], x, r + ".") | {"x-interface": {"key": r, "version": x["version"]}}
                 p = {"$ref": f"#/$defs/{name}"}
             for a in ("minimum", "maximum"):
                 if it.get(a) is not None:
@@ -70,9 +75,8 @@ def contract_schema(d, m, units, ifc_iri=None):
                 req.append(it["name"])
         return {"type": "object", "title": title, "properties": props, "required": req, "additionalProperties": False}
 
-    recs = {r["name"]: r for r in d["records"]}
-    data = obj(d["items"], d["label"])
-    key, ver = d["key"], d["version"]
+    data = obj(d["items"], d["label"], d, "")
+    key, ver = key or d["key"], d["version"]
     out = {"$schema": "https://json-schema.org/draft/2020-12/schema", "$id": f"http://en-genius.local/schema/{key}/{ver}.json",
            "title": f"{d['label']} {ver}", "x-interface": {"key": key, "version": ver} | ({"iri": ifc_iri} if ifc_iri else {}),
            "type": "object", "required": ["contract", "version", "data"], "additionalProperties": False,
@@ -114,14 +118,16 @@ def skeleton(schema):
 
 
 def write_contracts(out: Path, m, ids, units, rel_all, rep: Report) -> int:
-    """contracts/<계약>/<판>.schema.json (현재 판 + 동결된 옛 판) + 현재 판의 .example.json. 만든 스키마 수를 돌려준다."""
+    """contracts/<계약>/<판>.schema.json (현재 판 + 동결된 옛 판) + 현재 판의 .example.json. 만든 스키마 수를 돌려준다.
+    동결된 판(현재 판 포함)은 동결본의 정의로 만든다 — YAML 이 달라졌으면 V02 가 이미 났다 (수준을 낮춰도 동결 판 스키마는 그대로)."""
     n_schema = 0
     for k, i in m["interface"].items():
         cdir = out / "contracts" / k
         cdir.mkdir(parents=True, exist_ok=True)
-        defs = {i["version"]: canon_def(i)} | {v: r["def"] for v, r in rel_all.get(k, {}).items() if v != i["version"]}
+        defs = {v: r["def"] for v, r in rel_all.get(k, {}).items()}
+        defs.setdefault(i["version"], canon_def(i, m))
         for ver, d in defs.items():
-            sch = contract_schema(d, m, units, str(EGID[ids[k]]))
+            sch = contract_schema(d, m, units, str(EGID[ids[k]]), key=k)
             jsonschema.Draft202012Validator.check_schema(sch)
             (cdir / f"{ver}.schema.json").write_text(json.dumps(sch, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
             n_schema += 1

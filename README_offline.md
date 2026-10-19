@@ -59,7 +59,7 @@ C:\EnGenius\
 |---|---|---|---|
 | `check.bat` | 기본 폴더 검사 | YAML 폴더(또는 그 안의 .yaml 하나) | 검사만 (1초 남짓) — 작성 중에 자주 |
 | `build.bat` | 기본 폴더 빌드 | YAML 폴더 (+ survey.ttl 을 같이 놓으면 TOOL ID 검사까지) | `output\<시각>_<폴더>\` + 흐름 그림이 브라우저로 열림. 오류가 있으면 결과 파일 없음 |
-| `release.bat` | `data\real\workflows` 만 (예시는 기본으로 안 씀) | YAML 폴더 | 계약 목록을 보여 주고 **계약 key·사유**를 묻는다 → `_released\<계약>\<판>.json` (일자·사유, 인명 없음) |
+| `release.bat` | `data\real\workflows` 만 (예시는 기본으로 안 씀) | YAML 폴더 | 계약 목록을 보여 주고 **계약 key·사유**를 묻는다 → `_released\<계약>\<판>.json` (일자·사유, 인명 없음 — 사유에 이름·직급이 보이면 다시 묻고, 끝내 그러면 거절 V06) |
 | `validate.bat` | — | 데이터 JSON 파일들 (+ 다른 빌드면 그 출력 폴더도) | 가장 최근 build 의 계약으로 검사 |
 | `link_tools.bat` | 연습: 예시 + 합성 카탈로그 | YAML 폴더 + Tool 온톨로지 `survey.ttl` | `output\<시각>_<폴더>_tool_candidates.csv` — 보고 `_plan.yaml` 에 사람이 적는다 |
 | `schema.bat` | 스키마 재생성 (`schema\wfo.yaml` 을 고친 뒤) | — | `schema\generated\` · cmd 에서 `schema.bat --check` = 드리프트만 |
