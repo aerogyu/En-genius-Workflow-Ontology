@@ -13,7 +13,10 @@ if not exist .venv\Scripts\python.exe goto :no_venv
 .venv\Scripts\python scripts\bat_helper.py validate %*
 set RC=%errorlevel%
 echo.
-echo [validate] rc=%RC%  -- 0 all files pass, 1 some file breaks its contract (see the lines above), 2 stopped (nothing to check)
+if "%RC%"=="0" echo [validate] RESULT: OK  (rc=0) - all files pass
+if "%RC%"=="1" echo [validate] RESULT: FAIL  (rc=1) - some file breaks its contract (see the lines above)
+if "%RC%"=="2" echo [validate] RESULT: STOPPED  (rc=2) - nothing to check
+if not "%RC%"=="0" if not "%RC%"=="1" if not "%RC%"=="2" echo [validate] RESULT: rc=%RC%
 pause
 exit /b %RC%
 

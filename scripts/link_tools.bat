@@ -15,7 +15,10 @@ if not exist .venv\Scripts\python.exe goto :no_venv
 .venv\Scripts\python scripts\bat_helper.py link-tools %*
 set RC=%errorlevel%
 echo.
-echo [link-tools] rc=%RC%  -- 0 CSV written, 1 the YAML folder has errors (run check.bat), 2 stopped (no survey.ttl given)
+if "%RC%"=="0" echo [link-tools] RESULT: OK  (rc=0) - CSV written
+if "%RC%"=="1" echo [link-tools] RESULT: ERRORS  (rc=1) - the YAML folder has errors (run check.bat)
+if "%RC%"=="2" echo [link-tools] RESULT: STOPPED  (rc=2) - no survey.ttl given
+if not "%RC%"=="0" if not "%RC%"=="1" if not "%RC%"=="2" echo [link-tools] RESULT: rc=%RC%
 pause
 exit /b %RC%
 

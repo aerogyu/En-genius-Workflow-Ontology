@@ -8,7 +8,9 @@ if not exist .venv\Scripts\python.exe goto :no_venv
 .venv\Scripts\python -m engenius_wf doctor
 set RC=%errorlevel%
 echo.
-echo [doctor] rc=%RC%  -- 0 ok ([--] Java is fine: only the SHACL / Fuseki tests need it), 1 some [NG] line above
+if "%RC%"=="0" echo [doctor] RESULT: OK  (rc=0) - [--] Java is fine: only the SHACL / Fuseki tests need it
+if "%RC%"=="1" echo [doctor] RESULT: NG  (rc=1) - see the [NG] line above
+if not "%RC%"=="0" if not "%RC%"=="1" echo [doctor] RESULT: rc=%RC%
 pause
 exit /b %RC%
 

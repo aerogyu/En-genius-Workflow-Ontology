@@ -16,7 +16,10 @@ if not exist .venv\Scripts\python.exe goto :no_venv
 .venv\Scripts\python scripts\bat_helper.py release %*
 set RC=%errorlevel%
 echo.
-echo [release] rc=%RC%  -- 0 frozen (or already frozen), 1 refused (see the message above), 2 stopped (nothing changed)
+if "%RC%"=="0" echo [release] RESULT: OK  (rc=0) - frozen (or already frozen)
+if "%RC%"=="1" echo [release] RESULT: REFUSED  (rc=1) - see the message above
+if "%RC%"=="2" echo [release] RESULT: STOPPED  (rc=2) - nothing changed
+if not "%RC%"=="0" if not "%RC%"=="1" if not "%RC%"=="2" echo [release] RESULT: rc=%RC%
 pause
 exit /b %RC%
 

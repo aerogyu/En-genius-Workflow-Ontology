@@ -15,7 +15,10 @@ if not exist .venv\Scripts\python.exe goto :no_venv
 .venv\Scripts\python scripts\bat_helper.py build %*
 set RC=%errorlevel%
 echo.
-echo [build] rc=%RC%  -- 0 ok, 1 errors (no output files; fix the lines marked with the arrow), 2 stopped (argument or config)
+if "%RC%"=="0" echo [build] RESULT: OK  (rc=0)
+if "%RC%"=="1" echo [build] RESULT: ERRORS  (rc=1) - no output files; fix the lines marked with the arrow
+if "%RC%"=="2" echo [build] RESULT: STOPPED  (rc=2) - argument or config
+if not "%RC%"=="0" if not "%RC%"=="1" if not "%RC%"=="2" echo [build] RESULT: rc=%RC%
 pause
 exit /b %RC%
 

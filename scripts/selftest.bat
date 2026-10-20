@@ -13,7 +13,9 @@ if not exist .venv\Scripts\python.exe goto :no_venv
 .venv\Scripts\python scripts\bat_helper.py selftest
 set RC=%errorlevel%
 echo.
-echo [selftest] rc=%RC%  -- 0 PASS, 1 FAIL (bring the .txt named above to the dev PC; the .log stays in-house)
+if "%RC%"=="0" echo [selftest] RESULT: PASS  (rc=0) - bring the .txt named above to the dev PC; the .log stays in-house
+if "%RC%"=="1" echo [selftest] RESULT: FAIL  (rc=1) - bring the .txt named above to the dev PC; the .log stays in-house
+if not "%RC%"=="0" if not "%RC%"=="1" echo [selftest] RESULT: rc=%RC%
 pause
 exit /b %RC%
 

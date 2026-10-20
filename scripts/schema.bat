@@ -12,7 +12,9 @@ if not exist .venv\Scripts\python.exe goto :no_venv
 .venv\Scripts\python -m engenius_wf schema %*
 set RC=%errorlevel%
 echo.
-echo [schema] rc=%RC%  -- 0 ok, 1 lint errors or drift (see above)
+if "%RC%"=="0" echo [schema] RESULT: OK  (rc=0)
+if "%RC%"=="1" echo [schema] RESULT: NG  (rc=1) - lint errors or drift (see above)
+if not "%RC%"=="0" if not "%RC%"=="1" echo [schema] RESULT: rc=%RC%
 pause
 exit /b %RC%
 
