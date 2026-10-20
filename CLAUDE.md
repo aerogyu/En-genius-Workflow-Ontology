@@ -53,7 +53,7 @@
 
 - **`docs/03_인수인계.md` — 새 세션은 이것부터** (지금 어디까지 왔나, 환경 살리기, 다음 작업 = W1 결함 목록, 함정 기록, 검증 기록)
 - `docs/01_설계.md` — 개념 모델·작성 형식·검사 코드 전체 표·Tool 온톨로지 연결·마일스톤 W0~W6·결정 Q1~Q4·위험·검증 기록 **← 구현 전 필독**
-- `docs/02_작성안내.md` — 메모장으로 분야 하나 쓰기 (규칙 5줄·완결 예시·칸 목록·단위·전달 방법·실수 23종 표·결과 읽는 법). **메시지·칸·단위를 바꾸면 이 문서도 고친다**
+- `docs/02_작성안내.md` — 메모장으로 분야 하나 쓰기 (규칙 5줄·완결 예시·칸 목록·단위·전달 방법·실수 23종 표·결과 읽는 법·VS Code 로 쓰기 1-1장·query.bat 7장). **메시지·칸·단위를 바꾸면 이 문서도 고친다**
 - `docs/04_표준_IRI_대조.md` — P-Plan·QUDT·PROV·SKOS IRI 원본 대조 기록 (2026-10-19, 인터넷 되는 개발 PC 에서 1회). 단위를 더하면 여기에 한 줄
 - `README_offline.md` — 사내(폐쇄망) 설치·실행 (더블클릭 .bat, 밖으로 가져올 수 있는 것)
 - `schema/wfo.yaml` — 스키마 마스터. 고친 뒤 `python -m engenius_wf schema` (드리프트는 `--check`·테스트가 잡음)
@@ -73,6 +73,10 @@
   **P-Plan·QUDT IRI 원본 대조 완료** (2026-10-19, `docs/04_표준_IRI_대조.md` — 용어·단위 전부 원본에 존재, 위험 5 해소).
   남은 것: `docs/03` 4-1 미수리 항목(#1·2·4·5·7·10·12·13·15·17~21 — 작음, W2 에서) · 4-0b Leo 결정 거리 6 · 4-0c(OWL API 프로파일 잔여) · 작성 안내 다듬기(Leo 확인 ① 결과 반영).
   끝에 **★ Leo 확인 ①** (멈춤): Leo 가 메모장으로 공개 수준 분야 하나(예: 이차유로)를 써 보고 막힌 곳 모으기 · 분야 key 6개·단위 시작 목록 결정.
+  **작성 도움 (2026-10-20, Leo 요청)**: 사내 VS Code 1.90.2 + Red Hat YAML 1.25.0 VSIX(반입, MIT)용 **작성용 JSON Schema** `schema/generated/wfo_authoring.schema.json`
+  (`authoring.py`, `schema` 명령이 LinkML + rules.yaml·units.yaml 에서 생성·드리프트 감시, YAML 맨 위 한 줄 `# yaml-language-server: $schema=file:///…`) ·
+  `query.bat` (q01~q08 표, `query --table`) · `docs/02` 1-1장. 로더와 묶는 `tests/test_authoring.py` 의 변이 시험이 `transfer: [목록]` traceback 을 찾아 normalize 수리.
+  확장 자체로 연 확인은 사내에서 처음 (개발 PC 에는 확장 없음 — jsonschema·YAML 1.2 흉내로만).
 - [ ] W2 검사기 + 오류 골든 (실수 주입 30종 이상, rules.yaml 수준 조정 제한)
 - [ ] W3 RDF·계약 — V1~V12 는 W0 에서 통과, **판 규칙표 config 화**가 남음
 - [ ] W4 그림(클릭 패널·분야 필터)·질의·사내 반입(저장소 zip 첫 반입 + Tool 온톨로지 `build_update.py` 방식 복사 + 설치 판 표식) — 끝에 **★ Leo 확인 ②**
@@ -84,12 +88,12 @@
 ## 저장소 구조
 
 ```
-schema/          wfo.yaml (LinkML 마스터) · alignment.ttl (표준 정렬, 손으로) · generated/ (terms.json · wfo_file.schema.json · wfo.shacl.ttl · wfo.owl.ttl · lint.txt)
-src/engenius_wf/ cli · config · loader · normalize · checks · flow · registry · versioning · contracts · rdf · html · tools · report · model · pipeline · query · schema_gen · licenses
+schema/          wfo.yaml (LinkML 마스터) · alignment.ttl (표준 정렬, 손으로) · generated/ (terms.json · wfo_file.schema.json · wfo_authoring.schema.json · wfo.shacl.ttl · wfo.owl.ttl · lint.txt)
+src/engenius_wf/ cli · config · loader · normalize · checks · flow · registry · versioning · contracts · rdf · html · tools · report · model · pipeline · query · schema_gen · authoring · licenses
 config/          rules.yaml · units.yaml (사내 오버레이 data/real/config/)
 workflows/examples/  short · textbook (각 폴더 안 _registry·_released) · catalog/tools_synthetic.ttl
 queries/         q01~q08.rq (SPARQL 1.1 표준만)
-scripts/         env · build · check · validate · release · link_tools · schema · doctor · selftest · setup_offline (.bat) + bat_helper.py
+scripts/         env · build · check · validate · release · link_tools · query · schema · doctor · selftest · setup_offline (.bat) + bat_helper.py
 tests/           pytest + golden/ (골든은 시안 출력에서) · fixtures/loops/ (루프 여럿 가상 예시) · wfhelp.py (예시 복사·Jena 찾기)
 docs/            01_설계 · 02_작성안내 · 03_인수인계
 data/real/       (git 제외) 사내에서만 — workflows/ · config/
