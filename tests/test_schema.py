@@ -83,6 +83,19 @@ def test_owl_iri_valued_properties_are_object_properties(owl):
             assert (filler, RDF.type, OWL.Class) not in owl and (filler, OWL.unionOf, None) not in owl, (p, filler)
 
 
+def test_owl_anonymous_class_unions_typed(owl):
+    """이름 없는 합집합·교집합·열거에는 표지가 하나 — 클래스 식은 rdf:type owl:Class, 데이터 범위는 rdfs:Datatype (OWL 2 RDF 매핑 Table 13).
+    gen-owl 은 any_of 클래스 슬롯의 합집합 필러를 표지 없이 낸다 → 정리 6 (2026-10-20 Protégé 합본 검증 지적 2)."""
+    exprs = {n for p in (OWL.unionOf, OWL.intersectionOf, OWL.oneOf) for n in owl.subjects(p, None)}
+    marks = {n: {OWL.Class, RDFS.Datatype} & set(owl.objects(n, RDF.type)) for n in exprs}
+    assert sorted(str(n) for n, m in marks.items() if len(m) != 1) == []
+    class_unions = [n for n in owl.subjects(OWL.unionOf, None) if marks[n] == {OWL.Class}]
+    assert len(class_unions) == 3          # (Workflow ∪ SubPlan) ×2 · (Record ∪ Interface)
+    assert all(owl.value(r, OWL.allValuesFrom) in class_unions
+               for p in (URIRef(PPLAN + "isStepOfPlan"), URIRef(PPLAN + "isSubPlanOfPlan"), URIRef(WF + "structRef"))
+               for r in owl.subjects(OWL.onProperty, p) if owl.value(r, OWL.allValuesFrom) is not None)
+
+
 @pytest.mark.parametrize("name", ["short", "textbook_nocat"])
 def test_owl_property_kinds_match_data(built, owl, name):
     """빌드 출력(작성 ∪ 파생)과 OWL 선언이 맞는다 — 데이터 속성 값에 IRI 0, 객체 속성 값에 리터럴 0."""

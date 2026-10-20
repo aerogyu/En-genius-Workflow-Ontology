@@ -8,6 +8,7 @@
   상위 단계(MultiStep)의 wf:produces·consumes 는 경계 표시 — isOutputVarOf 는 가장 깊은 단계 하나에만.
 - 변수·바인딩·항목·묶음·하위 계획 IRI 는 레지스트리 ID 에서 해시로 (재빌드해도 같은 IRI).
 - Protégé 보기용 합본 workflow_protege.ttl (write_protege): 스키마 OWL + 작성 + 파생 + 외부 어휘 선언을 Turtle 한 파일로.
+  xsd:date(동결 일자)는 이 파일에서만 xsd:dateTime 으로 (OWL 2 데이터타입 목록 밖 — HermiT 가 받지 않는다).
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from __future__ import annotations
 import datetime as dt
 import functools
 import hashlib
+import re
 from itertools import chain
 from pathlib import Path
 
@@ -197,7 +199,12 @@ OWL_FILE = GEN_DIR / "wfo.owl.ttl"
 PROTEGE_BANNER = (
     "# 자동 생성 (build) — Protégé 보기용 합본: 스키마 OWL(schema/generated/wfo.owl.ttl) + 작성(workflow.ttl) + 파생(workflow_derived.ttl)\n"
     "# + 이 파일에만 넣은 외부 어휘 선언(p-plan·prov·dcterms·qudt·skos …). 빌드 시각 기록(BUILD)은 뺐다 — 같은 입력이면 같은 파일.\n"
+    "# 동결 일자(wf:releasedAt)는 이 파일에서만 xsd:date → xsd:dateTime (그날 00:00:00) — xsd:date 는 OWL 2 데이터타입 목록 밖이라\n"
+    "# HermiT 가 시작하지 않는다. 정본(wfo.owl.ttl·workflow_derived.ttl)은 xsd:date 그대로.\n"
     "# 보기 전용: 여기서 고친 것은 YAML 로 돌아가지 않는다 (원본은 YAML 폴더). Fuseki 적재는 workflow.trig.\n")
+# OWL 2 데이터타입 목록(datatype map) 밖의 xsd:date — HermiT 는 목록 안의 데이터타입만 받는다(UnsupportedDatatypeException).
+# 보기용 합본에서만 xsd:dateTime 으로 바꿔 넣는다 (정본 스키마는 SHACL·JSON Schema format: date 가 xsd:date 에 기댄다)
+DATE_LEX = re.compile(r"(-?\d{4,}-\d{2}-\d{2})(Z|[+-]\d{2}:\d{2})?")
 BUILTIN_NS = (str(RDF), str(RDFS), str(OWL), str(XSD))   # 내장 어휘 — 선언하지 않는다
 # 설명 술어 — 값이 IRI 든 글자든 주석 속성 (이름·key·메모·정의는 관계가 아니다)
 DESCRIPTIVE = frozenset({SKOS.notation, SKOS.note, SKOS.definition, SKOS.prefLabel, SKOS.altLabel, SKOS.hiddenLabel,
@@ -209,6 +216,19 @@ CLASS_KINDS = (OWL.Class, RDFS.Datatype)
 
 def _builtin(x) -> bool:
     return str(x).startswith(BUILTIN_NS)
+
+
+def owl2_view(t):
+    """트리플 하나를 보기용으로 — xsd:date 를 xsd:dateTime 으로 (클래스 제약의 필러, 동결 일자 리터럴 'YYYY-MM-DD' → 'YYYY-MM-DDT00:00:00',
+    시간대가 적혀 있으면 그대로 붙인다). 날짜 모양이 아닌 xsd:date 글자(손으로 고친 동결본 등)는 형 없는 글자로 둔다 — 추론기가
+    형 오류로 멈추지 않고, 값은 그대로 보인다. 그 밖의 트리플은 그대로."""
+    s, p, o = t
+    if isinstance(o, URIRef) and o == XSD.date:
+        return s, p, XSD.dateTime
+    if isinstance(o, Literal) and o.datatype == XSD.date:
+        m = DATE_LEX.fullmatch(str(o))
+        return s, p, (Literal(f"{m[1]}T00:00:00{m[2] or ''}", datatype=XSD.dateTime) if m else Literal(str(o)))
+    return t
 
 
 @functools.lru_cache(maxsize=2)
@@ -285,29 +305,38 @@ def protege_graph(A: Graph, D: Graph, plan: URIRef, plan_label: str, plan_versio
     """보기용 합본 그래프와 건수 — 스키마(머리 뗌) + 작성 + 파생(빌드 시각 기록 BUILD 뺌) + 머리 하나 + 선언.
 
     머리(owl:Ontology)는 워크플로 plan IRI 기준 하나(<plan>/protege), owl:versionInfo 는 plan 의 version (빌드 시각이 아니다).
-    owl:imports 는 두지 않는다 (폐쇄망에서 Protégé 가 인터넷으로 찾으러 가지 않게). 건수는 단계마다 새로 더해진 트리플 수라 합 = 전체."""
+    owl:imports 는 두지 않는다 (폐쇄망에서 Protégé 가 인터넷으로 찾으러 가지 않게). 건수는 단계마다 새로 더해진 트리플 수라 합 = 전체.
+    스키마·작성·파생 트리플은 owl2_view 를 거친다 (xsd:date → xsd:dateTime, 한 트리플이 한 트리플로 — 건수는 그대로, 바꾼 수는 n['retyped'])."""
     st = Path(owl_file).stat()
     s_triples, s_ns, s_ver = _schema_view(str(Path(owl_file).resolve()), st.st_mtime_ns, st.st_size)
     g = Graph()
     for pfx, ns in chain(s_ns, A.namespaces(), D.namespaces()):
         g.bind(pfx, ns, override=True)
-    n = {}
+    n = {"retyped": 0}
+
+    def add(t):
+        v = owl2_view(t)
+        n["retyped"] += v != t
+        g.add(v)
+
     for t in s_triples:
-        g.add(t)
+        add(t)
     n["schema"] = len(g)
     for t in A:
-        g.add(t)
+        add(t)
     n["authored"] = len(g) - n["schema"]
     builds = {s for s in D.subjects(RDF.type, PROV.Activity) if str(s).startswith(str(EGID) + "BUILD-")}
     for t in D:
         if t[0] not in builds:
-            g.add(t)
+            add(t)
     n["derived"] = len(g) - n["schema"] - n["authored"]
     onto = URIRef(f"{plan}/protege")
     g.add((onto, RDF.type, OWL.Ontology))
     g.add((onto, RDFS.label, Literal(f"{plan_label} — Protégé 보기용 합본", lang="ko")))
+    retyped = (" 동결 일자(wf:releasedAt)는 이 파일에서만 xsd:date 대신 xsd:dateTime(그날 00:00:00) — xsd:date 는 OWL 2 데이터타입 목록 밖이라 "
+               "HermiT 가 시작하지 않는다 (정본은 xsd:date)." if n["retyped"] else "")
     g.add((onto, RDFS.comment, Literal(f"스키마(wfo {s_ver}) + 작성 + 파생(빌드 시각 기록 제외) + 외부 어휘 선언. 보기 전용 — "
-                                       "Protégé 에서 고친 것은 YAML 로 돌아가지 않는다. 추론 결과는 판정이 아니다.", lang="ko")))
+                                       "Protégé 에서 고친 것은 YAML 로 돌아가지 않는다. 추론 결과는 판정이 아니다." + retyped, lang="ko")))
     if plan_version not in (None, ""):
         g.add((onto, OWL.versionInfo, Literal(str(plan_version))))
     n["header"] = len(g) - n["schema"] - n["authored"] - n["derived"]

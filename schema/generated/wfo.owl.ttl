@@ -366,14 +366,15 @@ wf:InterfaceItem a owl:Class ;
                     owl:withRestrictions ( [ xsd:pattern "[A-Za-z][A-Za-z0-9_]*" ] ) ] ;
             owl:onProperty wf:itemName ],
         [ a owl:Restriction ;
-            owl:allValuesFrom [ owl:unionOf ( wf:Record wf:Interface ) ] ;
-            owl:onProperty wf:structRef ],
-        [ a owl:Restriction ;
             owl:maxCardinality 1 ;
             owl:onProperty wf:dataType ],
         [ a owl:Restriction ;
             owl:maxCardinality 1 ;
             owl:onProperty wf:isRequired ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a owl:Class ;
+                    owl:unionOf ( wf:Record wf:Interface ) ] ;
+            owl:onProperty wf:structRef ],
         [ a owl:Restriction ;
             owl:allValuesFrom xsd:boolean ;
             owl:onProperty wf:isRequired ],
@@ -728,10 +729,11 @@ wf:DataVariable a owl:Class ;
 wf:SubPlan a owl:Class ;
     rdfs:label "SubPlan" ;
     rdfs:subClassOf [ a owl:Restriction ;
-            owl:cardinality 1 ;
+            owl:allValuesFrom [ a owl:Class ;
+                    owl:unionOf ( wf:Workflow wf:SubPlan ) ] ;
             owl:onProperty p-plan:isSubPlanOfPlan ],
         [ a owl:Restriction ;
-            owl:allValuesFrom [ owl:unionOf ( wf:Workflow wf:SubPlan ) ] ;
+            owl:cardinality 1 ;
             owl:onProperty p-plan:isSubPlanOfPlan ],
         p-plan:Plan ;
     skos:definition "(빌드) 하위 단계가 있는 단계를 펼친 하위 계획 (p-plan:isDecomposedAsPlan 의 대상)." ;
@@ -816,9 +818,6 @@ wf:Interface a owl:Class ;
 wf:Step a owl:Class ;
     rdfs:label "Step" ;
     rdfs:subClassOf [ a owl:Restriction ;
-            owl:allValuesFrom [ owl:unionOf ( wf:Workflow wf:SubPlan ) ] ;
-            owl:onProperty p-plan:isStepOfPlan ],
-        [ a owl:Restriction ;
             owl:allValuesFrom wf:InputBinding ;
             owl:onProperty wf:hasInput ],
         [ a owl:Restriction ;
@@ -848,6 +847,10 @@ wf:Step a owl:Class ;
         [ a owl:Restriction ;
             owl:maxCardinality 1 ;
             owl:onProperty wf:partOf ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom [ a owl:Class ;
+                    owl:unionOf ( wf:Workflow wf:SubPlan ) ] ;
+            owl:onProperty p-plan:isStepOfPlan ],
         [ a owl:Restriction ;
             owl:maxCardinality 1 ;
             owl:onProperty wf:status ],

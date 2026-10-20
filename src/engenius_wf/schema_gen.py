@@ -14,6 +14,8 @@ LinkML 생성기 함정 정리: gen-owl 이 남의 어휘(외부 이름공간 �
 제약에서 뺀다 (판 형식·필수는 SHACL 이 검사). 선택지 = 이름 있는 데이터타입. xsd:pattern 앵커 제거. 열린 루트(WorkflowFile — YAML
 용기)는 OWL·SHACL 에서 뺀다. 값이 IRI 인 속성(range uriorcurie → gen-owl 은 xsd:anyURI 데이터 속성, any_of 클래스 → default_range
 string 데이터 속성)은 객체 속성으로 바꾸고 xsd:anyURI 제약을 지운다 (OWL 2 DL — 데이터 속성 값에 IRI 불가).
+이름 없는 클래스 합집합(any_of 클래스 슬롯의 필러 — gen-owl 은 표지 없이 낸다)에는 rdf:type owl:Class 를 단다 (OWL 2 RDF 매핑은
+이 표지로 클래스 합집합과 데이터 범위 합집합을 가른다).
 alignment.ttl 은 머리(owl:Ontology)를 떼고 합친다 — 한 파일에 온톨로지 머리는 wf: 하나 (주석은 wf: 머리로 옮김).
 gen-owl·gen-shacl 은 실행마다 Turtle 줄 순서가 바뀌므로 빈 노드를 정규화(to_canonical_graph)해 직렬화한다.
 """
@@ -179,6 +181,12 @@ def build_owl() -> tuple[str, int]:
         g.bind(pfx, ns, override=False)
     for t in al:
         g.add(t)
+    # 정리 6: 이름 없는 클래스 합집합·교집합에 rdf:type owl:Class (2026-10-20 Protégé 합본 검증). OWL 2 RDF 매핑의 파싱 표(Table 13)는
+    #         `_:x rdf:type owl:Class` + owl:unionOf 를 ObjectUnionOf, `rdf:type rdfs:Datatype` + owl:unionOf 를 DataUnionOf 로 가른다.
+    #         gen-owl 은 any_of 클래스 슬롯(p-plan:isStepOfPlan·isSubPlanOfPlan·wf:structRef)의 합집합 필러를 표지 없이 낸다 —
+    #         매핑을 엄격히 따르는 파서(OWL API strict 등)는 그 제약을 빠뜨리거나 오류로 본다. 데이터 범위(선택지·패턴)는 이미 rdfs:Datatype.
+    for n in _untyped_class_exprs(g):
+        g.add((n, RDF.type, OWL.Class))
     ver = yaml.safe_load(SCHEMA.read_text(encoding="utf-8"))["version"]
     for ont in g.subjects(RDF.type, OWL.Ontology):
         g.add((ont, OWL.versionInfo, Literal(str(ver))))
@@ -200,6 +208,17 @@ def _is_class_expr(g, n) -> bool:
     if lst is not None:
         return all(_is_class_expr(g, x) for x in Collection(g, lst))
     return False
+
+
+def _untyped_class_exprs(g) -> list:
+    """표지(rdf:type owl:Class / rdfs:Datatype) 없는 이름 없는 합집합·교집합 중 구성원이 전부 클래스(또는 클래스 합집합)인 것."""
+    out = []
+    for p in (OWL.unionOf, OWL.intersectionOf):
+        for n, lst in g.subject_objects(p):
+            if isinstance(n, BNode) and not {OWL.Class, RDFS.Datatype} & set(g.objects(n, RDF.type)) \
+                    and all(_is_class_expr(g, m) for m in Collection(g, lst)):
+                out.append(n)
+    return out
 
 
 def build_terms() -> str:

@@ -18,18 +18,25 @@ from pathlib import Path
 import pytest
 import yaml
 from rdflib import BNode, Graph, Literal, URIRef
+from rdflib.collection import Collection
 from rdflib.compare import isomorphic
 from rdflib.namespace import DCTERMS, OWL, RDF, RDFS, SKOS, XSD
 
 from engenius_wf.config import GEN_DIR, REPO_ROOT
 from engenius_wf.model import EGID, PPLAN, QUDT, WF
-from engenius_wf.rdf import PROTEGE_FILE
+from engenius_wf.rdf import PROTEGE_FILE, owl2_view
 from wfhelp import build_copy, copy_example, find_jena
 
 PROV = "http://www.w3.org/ns/prov#"
 NAMES = ["short", "textbook_nocat", "textbook"]
 BUILTIN = (str(RDF), str(RDFS), str(OWL), str(XSD))
 PROP_KINDS = (OWL.ObjectProperty, OWL.DatatypeProperty, OWL.AnnotationProperty)
+# OWL 2 데이터타입 목록 (OWL 2 Structural Specification 4장 datatype map) — HermiT 는 이 밖의 데이터타입에서 시작하지 않는다
+OWL2_DATATYPES = {XSD[x] for x in (
+    "decimal integer nonNegativeInteger nonPositiveInteger positiveInteger negativeInteger long int short byte "
+    "unsignedLong unsignedInt unsignedShort unsignedByte double float string normalizedString token language Name NCName "
+    "NMTOKEN boolean hexBinary base64Binary anyURI dateTime dateTimeStamp").split()} | \
+    {OWL.real, OWL.rational, RDF.PlainLiteral, RDF.XMLLiteral, RDFS.Literal}
 
 
 def _get(built, name):
@@ -43,8 +50,21 @@ def _builtin(x) -> bool:
     return str(x).startswith(BUILTIN)
 
 
+def _date_view(g: Graph) -> Graph:
+    """정본 파일을 합본과 견줄 수 있게 — xsd:date(필러·'YYYY-MM-DD' 리터럴)를 xsd:dateTime(그날 00:00:00)으로 (합본에서만 바꾸는 것)."""
+    out = Graph()
+    for s, p, o in g:
+        if o == XSD.date and isinstance(o, URIRef):
+            o = XSD.dateTime
+        elif isinstance(o, Literal) and o.datatype == XSD.date:
+            o = Literal(f"{o}T00:00:00", datatype=XSD.dateTime)
+        out.add((s, p, o))
+    return out
+
+
 def _parts(b):
-    """(합본 P, 스키마 S(머리 뗌), 작성 A, 파생 D(빌드 시각 기록 뗌), 빌드 기록 주어) — 각 파일을 따로 읽어서."""
+    """(합본 P, 스키마 S(머리 뗌), 작성 A, 파생 D(빌드 시각 기록 뗌), 빌드 기록 주어) — 각 파일을 따로 읽어서.
+    S·A·D 는 합본과 같은 데이터타입 보기로 (xsd:date → xsd:dateTime, 트리플 수는 그대로)."""
     P = Graph().parse(b.out / PROTEGE_FILE, format="turtle")
     S = Graph().parse(GEN_DIR / "wfo.owl.ttl", format="turtle")
     for ont in list(S.subjects(RDF.type, OWL.Ontology)):
@@ -54,7 +74,7 @@ def _parts(b):
     builds = {s for s in D.subjects() if str(s).startswith(str(EGID) + "BUILD-")}
     for s in builds:
         D.remove((s, None, None))
-    return P, S, A, D, builds
+    return P, _date_view(S), _date_view(A), _date_view(D), builds
 
 
 def _kinds(g: Graph) -> dict:
@@ -136,6 +156,70 @@ def test_triple_count_is_schema_authored_derived_declared(built, name):
             if t not in decl and t[0] != head:
                 rest.add(t)
         assert isomorphic(rest, S + A + D)
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_datatypes_in_owl2_datatype_map(built, name):
+    """합본에 쓰인 데이터타입(리터럴 형·xsd: 필러)은 전부 OWL 2 데이터타입 목록 안 — Protégé 기본 추론기 HermiT 는 목록 밖(xsd:date 등)에서
+    UnsupportedDatatypeException 으로 시작하지 않는다 (2026-10-20 검증 지적 1). 동결 기록이 없는 short 도 스키마의 wf:releasedAt 제약에 걸렸다."""
+    P = Graph().parse(_get(built, name).out / PROTEGE_FILE, format="turtle")
+    used = {o.datatype for o in P.objects() if isinstance(o, Literal) and o.datatype is not None}
+    used |= {o for o in P.objects() if isinstance(o, URIRef) and str(o).startswith(str(XSD))}
+    assert XSD.dateTime in used and sorted(used - OWL2_DATATYPES) == []
+
+
+def test_release_date_is_datetime_only_in_view(built):
+    """동결 일자 — 합본에서만 xsd:dateTime(그날 00:00:00), 정본(파생 파일·스키마 OWL)은 xsd:date 그대로. 머리 주석에 그 사실 한 줄."""
+    b = _get(built, "textbook_nocat")
+    P = Graph().parse(b.out / PROTEGE_FILE, format="turtle")
+    D = Graph().parse(b.out / "workflow_derived.ttl", format="turtle")
+    S = Graph().parse(GEN_DIR / "wfo.owl.ttl", format="turtle")
+    rel = WF.releasedAt
+    d_vals = sorted(D.subject_objects(rel))
+    assert d_vals and all(o.datatype == XSD.date for _, o in d_vals)
+    assert sorted(P.subject_objects(rel)) == [(s, Literal(f"{o}T00:00:00", datatype=XSD.dateTime)) for s, o in d_vals]
+    assert {S.value(r, OWL.allValuesFrom) for r in S.subjects(OWL.onProperty, rel)} - {None} == {XSD.date}   # None = 개수 제약
+    assert {P.value(r, OWL.allValuesFrom) for r in P.subjects(OWL.onProperty, rel)} - {None} == {XSD.dateTime}
+    head = next(P.subjects(RDF.type, OWL.Ontology))
+    assert "xsd:dateTime" in str(P.value(head, RDFS.comment))
+    assert "xsd:dateTime" in (b.out / PROTEGE_FILE).read_text(encoding="utf-8").split("@prefix", 1)[0]   # 파일 맨 위 설명
+
+
+def test_owl2_view_date_forms():
+    """owl2_view — xsd:date 필러·리터럴만 바꾼다 (시간대는 그대로 붙임, 날짜 모양이 아니면 형 없는 글자). 나머지는 그대로.
+    시간대 예는 normalize=False — rdflib 는 기본으로 xsd:date 글자를 정규화하며 시간대를 떨군다 (빌드 출력의 동결 일자는 늘 'YYYY-MM-DD')."""
+    s, p = URIRef("urn:s"), URIRef("urn:p")
+    f = lambda o: owl2_view((s, p, o))[2]  # noqa: E731
+    raw = lambda lex: Literal(lex, datatype=XSD.date, normalize=False)  # noqa: E731
+    assert f(XSD.date) == XSD.dateTime
+    assert f(Literal("2026-10-19", datatype=XSD.date)) == Literal("2026-10-19T00:00:00", datatype=XSD.dateTime)
+    for lex, want in (("2026-10-19Z", "2026-10-19T00:00:00Z"), ("2026-10-19+09:00", "2026-10-19T00:00:00+09:00")):
+        got = f(raw(lex))           # rdflib 이 'Z' 를 '+00:00' 으로 적을 수 있다 — 값으로 비교
+        assert got.datatype == XSD.dateTime and got.eq(Literal(want, datatype=XSD.dateTime)), (lex, got)
+    assert f(raw("2026/10/19")) == Literal("2026/10/19")
+    for o in (Literal("2026-10-19"), Literal(3), Literal("x", lang="ko"), XSD.string, XSD.dateTime, URIRef("urn:o")):
+        assert f(o) == o and owl2_view((s, p, o)) == (s, p, o)
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_anonymous_class_expressions_typed(built, name):
+    """이름 없는 합집합·교집합·열거에는 표지가 하나 — rdf:type owl:Class(클래스 식) 또는 rdfs:Datatype(데이터 범위).
+    OWL 2 RDF 매핑(Table 13)은 이 표지로 ObjectUnionOf 와 DataUnionOf 를 가른다 (2026-10-20 검증 지적 2 — 정본 schema_gen 정리 6 에서 단다).
+    p-plan:isStepOfPlan·isSubPlanOfPlan 의 (Workflow ∪ SubPlan), wf:structRef 의 (Record ∪ Interface) 3곳."""
+    P = Graph().parse(_get(built, name).out / PROTEGE_FILE, format="turtle")
+    exprs = {n for pr in (OWL.unionOf, OWL.intersectionOf, OWL.oneOf, OWL.complementOf) for n in P.subjects(pr, None)}
+    marks = {n: {OWL.Class, RDFS.Datatype} & set(P.objects(n, RDF.type)) for n in exprs}
+    assert exprs and sorted(str(n) for n, m in marks.items() if len(m) != 1) == []
+    unions = {}
+    for pr in (PPLAN.isStepOfPlan, PPLAN.isSubPlanOfPlan, WF.structRef):
+        for r in P.subjects(OWL.onProperty, pr):
+            f = P.value(r, OWL.allValuesFrom)
+            if f is not None and (f, OWL.unionOf, None) in P:      # None = 개수 제약 (None 으로 찾으면 아무 트리플이나 맞는다)
+                unions[f] = (pr, sorted(Collection(P, P.value(f, OWL.unionOf))))
+    assert sorted(v for v in unions.values()) == sorted([
+        (PPLAN.isStepOfPlan, sorted([WF.Workflow, WF.SubPlan])), (PPLAN.isSubPlanOfPlan, sorted([WF.Workflow, WF.SubPlan])),
+        (WF.structRef, sorted([WF.Record, WF.Interface]))])
+    assert all(marks[f] == {OWL.Class} for f in unions)
 
 
 def test_external_vocab_kinds(built):
