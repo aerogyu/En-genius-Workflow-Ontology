@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
-from engenius_wf.query import query_files, query_title, run_local, union_graph, with_from
+from engenius_wf.query import cell_width, is_cross, query_files, query_title, render_table, run_local, union_graph, with_from
 from wfhelp import GOLDEN, run_cli
 
 GOLD = json.loads((GOLDEN / "queries.json").read_text(encoding="utf-8"))
@@ -59,3 +60,35 @@ def test_query_command(built):
     assert rc == 2 and "모르는 질의" in out
     rc, out = run_cli(["query", built["textbook_nocat"].out / "없음"])
     assert rc == 1
+
+
+def test_query_table(built):
+    """--table (query.bat) — 칸을 맞춘 표: 머리 줄·구분 줄·행, 한글은 2칸으로 세어 열이 맞는다. 교차 질의는 카탈로그 없이 돌면 참고 한 줄."""
+    rc, out = run_cli(["query", built["textbook_nocat"].out, "q02", "q07", "--table"])
+    assert rc == 0, out
+    lines = out.splitlines()
+    head = next(i for i, ln in enumerate(lines) if ln.startswith("== q02"))
+    assert lines[head + 1].split() == ["from", "|", "ftool", "|", "to", "|", "ttool", "|", "contract"]
+    assert set(lines[head + 2].strip()) <= {"-", "+"}
+    rows = lines[head + 3:head + 5]
+    assert rows[0].split(" | ")[0].strip() == "perf-cycle-dp" and rows[1].split(" | ")[0].strip() == "perf-offdesign"
+    bars = {tuple(cell_width(ln[:m.start()]) for m in re.finditer(r" \| ", ln)) for ln in [lines[head + 1]] + rows}
+    assert len(bars) == 1                                       # 모든 줄의 '|' 가 같은 칸에 (한글 툴 이름이 없어도 같은 계산)
+    assert "참고: q07 는 Tool 온톨로지 교차 질의" in out
+    rc, out = run_cli(["query", built["textbook_nocat"].out, "q02"])
+    assert "-+-" not in out and "\t" in out                      # 기본은 탭으로 나눈 줄 그대로
+
+
+def test_render_table_east_asian_width():
+    lines = render_table(["단계", "n"], [("압축기", "1"), ("cmp", "12")])
+    assert lines[0] == "단계   | n"
+    assert lines[1] == "-------+---"
+    assert lines[2] == "압축기 | 1" and lines[3] == "cmp    | 12"
+    assert {cell_width(ln.split("|")[0]) for ln in [lines[0]] + lines[2:]} == {7}
+    assert render_table(["a"], []) == ["a", "-", "(결과 없음)"]
+    assert render_table(["a"], [("x\ty\nz",)])[2] == "x y z"
+
+
+def test_is_cross():
+    files = query_files()
+    assert [n for n, p in files.items() if is_cross(p.read_text(encoding="utf-8"))] == ["q07", "q08"]

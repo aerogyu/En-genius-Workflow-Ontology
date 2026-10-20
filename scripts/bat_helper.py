@@ -10,6 +10,9 @@
   link-tools [YAML 폴더] [카탈로그.ttl …]            카탈로그가 없으면 예시 폴더일 때만 예시 합성 카탈로그, 아니면 멈춤 (rc 2).
                                                     CSV → output/<시각>_<폴더 이름>_tool_candidates.csv
   validate   [build 출력 폴더] <데이터.json …>        출력 폴더를 안 주면 가장 최근 build 출력 (contracts/ 가 있는 것)
+  query      [build 출력 폴더|그 안의 .ttl] [survey.ttl …] [q01 …]
+                                                    출력 폴더를 안 주면 가장 최근 build 출력 (workflow.ttl 이 있는 것).
+                                                    q01~q08 을 표로 (query --table). 다른 .ttl = Tool 온톨로지 카탈로그 (q07·q08)
   release    [YAML 폴더] [계약 key] [사유 …]          빠진 것은 묻는다. 폴더 기본은 data/real/workflows — 없으면 멈춤
                                                     (예시 폴더는 저장소 파일이라 기본으로 동결하지 않는다)
   selftest                                         doctor → pytest → offline/selftest_<커밋>.txt (값 없음) + .log (사내에만)
@@ -188,12 +191,13 @@ def do_link_tools(args) -> int:
     return rc
 
 
-def latest_out():
-    """가장 최근 build 출력 — contracts/ 와 report.txt 가 있는 output/* 중 report.txt 가 가장 새것 (실패한 빌드는 contracts/ 가 없다)."""
+def latest_out(need=("contracts",)):
+    """가장 최근 build 출력 — need(기본 contracts/)와 report.txt 가 있는 output/* 중 report.txt 가 가장 새것
+    (실패한 빌드는 contracts/·TTL 이 없다)."""
     base = config.OUTPUT_DIR
     if not base.is_dir():
         return None
-    cands = [p for p in base.iterdir() if (p / "contracts").is_dir() and (p / "report.txt").is_file()]
+    cands = [p for p in base.iterdir() if p.is_dir() and all((p / n).exists() for n in need) and (p / "report.txt").is_file()]
     return max(cands, key=lambda p: (p / "report.txt").stat().st_mtime) if cands else None
 
 
@@ -224,6 +228,50 @@ def do_validate(args) -> int:
     else:
         print(f"[validate] 계약 = {rel(out)}")
     return cli.main(["validate", str(out), *map(str, files)])
+
+
+BUILD_TTL = ("workflow.ttl", "workflow_derived.ttl")
+QUERY_NAME = re.compile(r"[qQ]\d\d")
+
+
+def is_build_out(p: Path) -> bool:
+    return p.is_dir() and all((p / n).is_file() for n in BUILD_TTL)
+
+
+def do_query(args) -> int:
+    """질의 q01~q08 을 표로 — 끌어다 놓은 build 출력 폴더(또는 그 안의 workflow*.ttl), 없으면 가장 최근 build 출력. 읽기만 한다."""
+    out, cats, names = None, [], []
+    for a in args:
+        if QUERY_NAME.fullmatch(a.strip()):
+            names.append(a.strip().lower())
+            continue
+        p = resolve_arg(a)
+        if p.is_file() and p.suffix.lower() == ".ttl" and p.name.startswith("workflow") and is_build_out(p.parent):
+            p = p.parent                                     # 출력 폴더 안의 workflow.ttl·workflow_protege.ttl 을 끌어다 놓음
+        if p.is_dir():
+            if not is_build_out(p):
+                raise Stop(f"build 출력 폴더(output\\<실행>)가 아니다 — workflow.ttl·workflow_derived.ttl 이 없다 "
+                           f"(오류가 있던 build 는 결과 파일이 없다): {a}")
+            if out is not None and p.resolve() != out.resolve():
+                raise Stop(f"build 출력 폴더가 둘이다: {rel(out)} · {rel(p)} — 한 번에 하나만")
+            out = p
+        elif p.is_file() and p.suffix.lower() == ".ttl":
+            cats.append(p)
+        elif p.exists():
+            raise Stop(f"build 출력 폴더·Tool 온톨로지 카탈로그(.ttl)·질의 이름(q01 …)이 아니다: {a}")
+        else:
+            raise Stop(f"찾을 수 없다: {a}")
+    if out is None:
+        out = latest_out(need=BUILD_TTL)
+        if out is None:
+            raise Stop("build 출력이 없다 — 먼저 build.bat (오류 없이 끝난 build 의 출력 폴더를 쓴다)")
+        print(f"[query] 출력 = {rel(out)} (가장 최근 build 출력 — 다른 빌드면 그 출력 폴더를 query.bat 위에 끌어다 놓는다)")
+    else:
+        print(f"[query] 출력 = {rel(out)}")
+    for c in cats:
+        print(f"[query] 카탈로그 = {rel(c)}")
+    print()
+    return cli.main(["query", str(out), *names, "--table"] + cat_args(cats))
 
 
 def ask(prompt: str) -> str:
@@ -380,7 +428,7 @@ def do_commit(args) -> int:
     return 0
 
 
-COMMANDS = {"build": do_build, "check": do_check, "link-tools": do_link_tools, "validate": do_validate,
+COMMANDS = {"build": do_build, "check": do_check, "link-tools": do_link_tools, "validate": do_validate, "query": do_query,
             "release": do_release, "selftest": do_selftest, "commit": do_commit}
 
 

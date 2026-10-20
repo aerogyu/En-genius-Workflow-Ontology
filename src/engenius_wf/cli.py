@@ -5,7 +5,7 @@
   release <YAML 폴더> <계약 key> --reason "사유"               확정 판 동결 (HITL 기록: 일자·사유, 인명 없음)
   validate <빌드 출력 폴더> <데이터.json ...>                  실제 데이터가 계약을 지키는지
   link-tools <YAML 폴더> --catalog ... --csv <파일>           TOOL ID 후보 CSV (사람이 확정)
-  query <빌드 출력 폴더> [q01 ...] [--catalog ...]            queries/*.rq 를 rdflib 로
+  query <빌드 출력 폴더> [q01 ...] [--catalog ...] [--table]  queries/*.rq 를 rdflib 로 (--table: 칸을 맞춘 표)
   schema [--check]                                            LinkML → schema/generated/ (linkml 은 이 명령에서만 import)
   doctor · licenses                                           실행 환경 점검 · 설치 패키지 라이선스 표
 """
@@ -29,8 +29,8 @@ COMMANDS = {
     "release": "계약의 확정 판 동결 (_released/<계약>/<판>.json — 일자·사유, 인명 없음)",
     "validate": "실제 데이터(JSON)가 계약을 지키는지 검사",
     "link-tools": "Tool 온톨로지 TOOL ID 후보 CSV (사람이 보고 _plan.yaml 에 적는다)",
-    "query": "역량 질의(queries/*.rq)를 빌드 출력에 실행 (rdflib)",
-    "schema": "LinkML 스키마 → schema/generated/ 재생성 (--check: 드리프트만 확인)",
+    "query": "역량 질의(queries/*.rq)를 빌드 출력에 실행 (rdflib, --table: 표 — query.bat)",
+    "schema": "LinkML 스키마 → schema/generated/ 재생성 (VS Code 작성용 스키마 포함, --check: 드리프트만 확인)",
     "doctor": "실행 환경 점검 (Python·UTF-8 모드·Java·패키지·생성물·설정)",
     "licenses": "설치 패키지 라이선스 표 (금지 항목 있으면 rc 1)",
 }
@@ -147,7 +147,7 @@ def cmd_link_tools(a: argparse.Namespace) -> int:
 
 
 def cmd_query(a: argparse.Namespace) -> int:
-    from engenius_wf.query import query_files, query_title, run_local, union_graph
+    from engenius_wf.query import is_cross, query_files, query_title, render_table, run_local, union_graph
     from engenius_wf.report import suggest
 
     out = Path(a.out)
@@ -161,12 +161,24 @@ def cmd_query(a: argparse.Namespace) -> int:
         print(f"모르는 질의: {', '.join(bad)} — 있는 질의: {', '.join(files)} {suggest(bad[0], files)}".rstrip(), file=sys.stderr)
         return 2
     g = union_graph(out, a.catalog)
+    cross_without_catalog = []
     for n in names:
-        cols, rows = run_local(g, files[n].read_text(encoding="utf-8"))
+        text = files[n].read_text(encoding="utf-8")
+        cols, rows = run_local(g, text)
         print(f"== {n} {query_title(files[n])} — {len(rows)}행")
-        print("\t".join(cols))
-        for r in rows:
-            print("\t".join(r))
+        if a.table:
+            for line in render_table(cols, rows):
+                print("  " + line)
+            print()
+            if is_cross(text) and not a.catalog:
+                cross_without_catalog.append(n)
+        else:
+            print("\t".join(cols))
+            for r in rows:
+                print("\t".join(r))
+    if cross_without_catalog:
+        print(f"참고: {'·'.join(cross_without_catalog)} 는 Tool 온톨로지 교차 질의 — survey.ttl 을 --catalog 로 같이 주면 "
+              "(query.bat 에는 출력 폴더와 함께 끌어다 놓으면) 조사 쪽 열이 채워진다.")
     return 0
 
 
@@ -278,6 +290,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("out", help="build 출력 폴더")
     sp.add_argument("names", nargs="*", help="질의 이름 (q01 …, 기본: 전부)")
     sp.add_argument("--catalog", nargs="*", default=[], help="교차 질의(q07·q08)용 Tool 온톨로지 TTL")
+    sp.add_argument("--table", action="store_true", help="칸을 맞춘 표로 (기본: 탭으로 나눈 줄 — query.bat 은 표)")
     sp.set_defaults(func=cmd_query)
     sp = sub.add_parser("schema", help=COMMANDS["schema"])
     sp.add_argument("--check", action="store_true", help="생성하지 않고 커밋된 생성물이 스키마와 일치하는지만 확인")

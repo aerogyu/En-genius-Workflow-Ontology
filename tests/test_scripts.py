@@ -1,22 +1,25 @@
 """scripts\\*.bat 과 그 도우미 scripts/bat_helper.py — .bat 의 형식(ASCII·CRLF·env.bat·pause)과 도우미의 인자 고르기·기본 폴더·
-selftest 요약(값 없음)을 고정한다. .bat 자체를 cmd 로 돌리는 확인은 Windows 에서 손으로 한다 (docs/03 검증 기록)."""
+selftest 요약(값 없음)을 고정한다. .bat 자체를 cmd 로 돌리는 확인은 Windows 에서 손으로 한다 (docs/03 검증 기록) — query.bat 만은
+읽기 전용이라 Windows 에서 cmd.exe 로 실제로 돌린다 (임시 build 출력을 끌어다 놓은 꼴, 저장소 output\\ 은 읽지 않는다)."""
 
 from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
 
 from engenius_wf import config
 from engenius_wf.config import REPO_ROOT
-from wfhelp import copy_example
+from wfhelp import copy_example, run_cli
 
 SCRIPTS = REPO_ROOT / "scripts"
 BATS = sorted(SCRIPTS.glob("*.bat"))
-EXPECTED = {"env", "build", "check", "validate", "release", "link_tools", "schema", "doctor", "selftest", "setup_offline"}
+EXPECTED = {"env", "build", "check", "validate", "release", "link_tools", "schema", "doctor", "selftest", "setup_offline", "query"}
 
 
 def _helper():
@@ -133,6 +136,53 @@ def test_link_tools_defaults(sandbox, tmp_path, capsys):
     assert len(csvs) == 1
     head = csvs[0].read_text(encoding="utf-8-sig").splitlines()[0]
     assert head == "툴 key,적은 이름,지금 tool_id,후보 TOOL ID,후보 이름,근거"
+
+
+def test_query_double_click_and_drag(sandbox, tmp_path, capsys):
+    """query.bat 흉내 — 더블클릭(인자 없음) = 가장 최근 '오류 없이 끝난' build 출력, 끌어다 놓기 = 출력 폴더·그 안의 TTL·카탈로그·질의 이름."""
+    assert H.main(["query"]) == 2                                               # build 출력이 아직 없다
+    assert "[NG] build 출력이 없다" in capsys.readouterr().out
+    d = copy_example(tmp_path, "short")
+    assert H.main(["build", str(d)]) == 0
+    good = next((sandbox / "output").glob("*_short"))
+    bad = copy_example(tmp_path, "short", name="고장", state=False)
+    (bad / "perf.yaml").write_text((bad / "perf.yaml").read_text(encoding="utf-8").replace("Tt4:  K ", "Tt4:  k "), encoding="utf-8")
+    assert H.main(["build", str(bad)]) == 1                                     # 실패한 build 는 report.txt 만 — 더블클릭이 고르지 않는다
+    capsys.readouterr()
+    assert H.main(["query"]) == 0
+    out = capsys.readouterr().out
+    assert f"[query] 출력 = {H.rel(good)} (가장 최근 build 출력" in out
+    assert all(f"== q0{i} " in out for i in range(1, 9)) and "-+-" in out
+    assert "참고: q07·q08 는 Tool 온톨로지 교차 질의" in out
+    cat = config.EXAMPLES_DIR / "catalog" / "tools_synthetic.ttl"
+    assert H.main(["query", str(good / "workflow.ttl"), str(cat), "Q07"]) == 0   # 출력 폴더 안의 TTL · 카탈로그 · 질의 하나
+    out = capsys.readouterr().out
+    assert "== q07 " in out and "== q01 " not in out and "[query] 카탈로그 = " in out and "참고:" not in out
+    failed = next(p for p in (sandbox / "output").iterdir() if p.name.endswith("_고장"))
+    assert H.main(["query", str(failed)]) == 2
+    assert "build 출력 폴더(output\\<실행>)가 아니다" in capsys.readouterr().out
+    assert H.main(["query", str(good), str(d)]) == 2                            # YAML 폴더는 build 출력이 아니다
+    assert H.main(["query", str(good), "q99"]) == 2                             # 모르는 질의 (cli 가 rc 2)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="cmd.exe 로 .bat 을 실제로 돌리는 확인 — Windows 에서만")
+def test_query_bat_runs_in_cmd(tmp_path):
+    """query.bat 을 탐색기 끌어다 놓기와 같은 명령줄로 실제 실행 — env.bat 이 UTF-8 모드를 켜는지까지 (부모 환경의 PYTHONUTF8·PYTHONPATH 를 뺀다).
+    출력 폴더는 임시 build — 저장소 output\\ 과 data\\real 은 읽지 않는다. pause 는 stdin 엔터로 넘긴다."""
+    d = copy_example(tmp_path, "short")
+    out = tmp_path / "out short"                                                # 공백 든 경로 — 탐색기는 따옴표로 감싸 넘긴다
+    rc, text = run_cli(["build", d, "--out", out])
+    assert rc == 0, text
+    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONUTF8", "PYTHONIOENCODING", "PYTHONPATH")}
+    r = subprocess.run(f'cmd.exe /d /c ""{SCRIPTS / "query.bat"}" "{out}""', input=b"\r\n", capture_output=True, env=env,
+                       cwd=tmp_path, timeout=300)
+    stdout = r.stdout.decode("utf-8", errors="replace")
+    assert r.returncode == 0, stdout + r.stderr.decode("utf-8", errors="replace")
+    assert "== q02 " in stdout and "perf-cycle" in stdout and "-+-" in stdout
+    assert "[query] RESULT: OK  (rc=0)" in stdout
+    r = subprocess.run(f'cmd.exe /d /c ""{SCRIPTS / "query.bat"}" "{d}""', input=b"\r\n", capture_output=True, env=env,
+                       cwd=tmp_path, timeout=300)
+    assert r.returncode == 2 and "[query] RESULT: STOPPED  (rc=2)" in r.stdout.decode("utf-8", errors="replace")
 
 
 def test_release_defaults_and_prompts(sandbox, tmp_path, monkeypatch, capsys):
