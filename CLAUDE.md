@@ -77,6 +77,9 @@
   (`authoring.py`, `schema` 명령이 LinkML + rules.yaml·units.yaml 에서 생성·드리프트 감시, YAML 맨 위 한 줄 `# yaml-language-server: $schema=file:///…`) ·
   `query.bat` (q01~q08 표, `query --table`) · `docs/02` 1-1장. 로더와 묶는 `tests/test_authoring.py` 의 변이 시험이 `transfer: [목록]` traceback 을 찾아 normalize 수리.
   확장 자체로 연 확인은 사내에서 처음 (개발 PC 에는 확장 없음 — jsonschema·YAML 1.2 흉내로만).
+  **독립 검증 수리 5건 (2026-10-20, `docs/03` 7-3)**: `{ }` 안 쉼표 목록·천 단위 쉼표가 조용히 사라지던 로더 결함 → 값이 빈 모르는 칸도 S01 ·
+  값 사이·주석 앞 탭 → Y02(`<탭>` 표시) · `enum:A, B` 도 `[,/]` 로 나눔 · 문서 '빨간 줄' → 노란 물결(확장은 스키마 위반을 경고로, check 에서는 오류) ·
+  cmd 직접 명령은 `call scripts\env.bat` 먼저. pytest 404.
 - [ ] W2 검사기 + 오류 골든 (실수 주입 30종 이상, rules.yaml 수준 조정 제한)
 - [ ] W3 RDF·계약 — V1~V12 는 W0 에서 통과, **판 규칙표 config 화**가 남음
 - [ ] W4 그림(클릭 패널·분야 필터)·질의·사내 반입(저장소 zip 첫 반입 + Tool 온톨로지 `build_update.py` 방식 복사 + 설치 판 표식) — 끝에 **★ Leo 확인 ②**

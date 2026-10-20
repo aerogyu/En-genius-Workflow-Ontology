@@ -8,7 +8,7 @@ W0 판 (2026-10-19). 사내 반입·업데이트 방식은 W4 에서 Tool 온톨
 - 인터넷 없이 설치 (Tool 온톨로지가 이미 반입한 파이썬 패키지를 그대로 쓴다 — **새로 반입할 패키지 0**)
 - 저장소의 교과서 예시로 연습: 검사(`check`) → 빌드(`build`, 흐름 그림이 브라우저로 열림) → 계약 동결(`release`) → 데이터 검사(`validate`)
 - 빌드 결과를 Protégé 로 보기 (`workflow_protege.ttl` 한 파일 — 보기 전용, 5-1장) · 질의 q01~q08 결과를 표로 (`query.bat`)
-- (선택) VS Code 로 YAML 쓰기 — 칸 이름 자동완성·모양 오류 빨간 줄·칸 설명 (Red Hat YAML 확장 + 작성용 스키마, `docs\02_작성안내.md` 1-1장)
+- (선택) VS Code 로 YAML 쓰기 — 칸 이름 자동완성·모양 오류 물결 밑줄·칸 설명 (Red Hat YAML 확장 + 작성용 스키마, `docs\02_작성안내.md` 1-1장)
 - 실제 워크플로 작성: `data\real\workflows\` 에 분야별 YAML (git 에 올라가지 않는 곳)
 - Tool 온톨로지와 잇기: 사내 survey.ttl 로 TOOL ID 후보 CSV (`link_tools`) — 본격 교차는 W5
 - 자기 점검(`selftest`)
@@ -21,7 +21,7 @@ W0 판 (2026-10-19). 사내 반입·업데이트 방식은 W4 에서 Tool 온톨
 | 파이썬 패키지 | Tool 온톨로지의 `offline\wheels\` (또는 `wheels_win_amd64_cp310.zip`) | 이미 사내에 있다 — `requirements.lock` 이 같다 |
 | Java 21 · Fuseki 6.2.0 | SHACL·Fuseki 테스트에만 (선택) | Tool 온톨로지 때 반입한 `C:\EnGenius\tools\` 그대로 |
 | Protégé (5.x) | 빌드 결과 보기 (선택, 보기 전용 — 5-1장) | 사내 반입됨 (2026-10-20). 이 저장소가 설치·실행하지 않는다 |
-| Red Hat YAML 확장 1.25.0 (`redhat.vscode-yaml-1.25.0.vsix`, MIT) | VS Code 로 YAML 쓸 때 자동완성·빨간 줄·설명 (선택 — `docs\02_작성안내.md` 1-1장) | 사내 VS Code 1.90.2 에 맞는 판 (2.0 이상은 VS Code 1.91 이상 필요). 파이썬 패키지가 아니라 편집기 확장 — `requirements.lock` 은 그대로. 설치 뒤 `yaml.schemaStore.enable`·`redhat.telemetry.enabled` 를 끈다 |
+| Red Hat YAML 확장 1.25.0 (`redhat.vscode-yaml-1.25.0.vsix`, MIT) | VS Code 로 YAML 쓸 때 자동완성·물결 밑줄·설명 (선택 — `docs\02_작성안내.md` 1-1장) | 사내 VS Code 1.90.2 에 맞는 판 (2.0 이상은 VS Code 1.91 이상 필요). 파이썬 패키지가 아니라 편집기 확장 — `requirements.lock` 은 그대로. 설치 뒤 `yaml.schemaStore.enable`·`redhat.telemetry.enabled` 를 끈다 |
 
 ## 2. 준비
 
@@ -136,9 +136,14 @@ Java·Fuseki 가 없으면 그 테스트만, Tool 온톨로지 합성 survey.ttl
 - `python` 이 3.10 이 아니다 → `scripts\env.bat` 에서 `set PYTHON=py -3.10`.
 - `.bat` 메시지가 영어인 이유: 한국어 Windows 의 cmd 가 .bat 을 cp949 로 읽어 한글이 깨지기 때문. 파이썬 출력은 한국어다.
 - 흐름 그림이 안 열린다 → 화면의 `[build] 흐름 그림: …\workflow.html` 을 직접 연다. 열지 않게 하려면 `env.bat` 에 `set WF_NO_OPEN=1`.
-- VS Code 에 빨간 줄·설명이 안 나온다 → YAML 맨 위 `# yaml-language-server: $schema=file:///…` 경로가 이 저장소의 `schema\generated\wfo_authoring.schema.json` 과 맞는지
-  (설치 자리가 다르면 그 경로로), 확장이 1.25.0 인지 본다. 빨간 줄과 check 결과가 다르면 **check 가 정본**이다 (`docs\02_작성안내.md` 1-1장 '알려진 차이').
-- `.bat` 없이 직접 치려면 (cmd, 저장소 폴더에서): `set PYTHONPATH=src` · `set PYTHONUTF8=1` 뒤 `.venv\Scripts\python -m engenius_wf --help`.
+- VS Code 에 밑줄·설명이 안 나온다 → YAML 맨 위 `# yaml-language-server: $schema=file:///…` 경로가 이 저장소의 `schema\generated\wfo_authoring.schema.json` 과 맞는지
+  (설치 자리가 다르면 그 경로로), 확장이 1.25.0 인지 본다.
+- VS Code 밑줄 색: **노란(주황) 물결 = 스키마(모양) 위반** — 확장은 경고(문제 패널 `Ctrl+Shift+M` 의 ⚠)로 표시하지만 check 에서는 같은 것이 **S01~S04 오류**다 (넘기지 않는다).
+  빨간 물결 = YAML 문법 오류. 밑줄과 check 결과가 다르면 `docs\02_작성안내.md` 1-1장 '알려진 차이' — check 만 잡는 것(참조·단위·값 사이 탭 등)은 check 를 따르고,
+  편집기만 긋는 것(값이 빈 빌드 칸·필수 칸 `null`·따옴표 안 끝 공백)은 고쳐 두면 된다 (잃는 값이 없다).
+  `{ }` 한 줄 안의 쉼표 목록(`formats: pdf, docx`)·천 단위 쉼표(`1,000`)는 이 판부터 check 도 S01 이다 — `[pdf, docx]`·`1000` 으로.
+- `.bat` 없이 직접 치려면 (cmd, 저장소 폴더에서): `call scripts\env.bat` (또는 `set PYTHONPATH=src` · `set PYTHONUTF8=1`) 뒤 `.venv\Scripts\python -m engenius_wf --help`
+  (예 `.venv\Scripts\python -m engenius_wf query output\<실행> --table` — 빼먹으면 `No module named engenius_wf`).
   `PYTHONUTF8=1` 을 빼면 한국어 YAML 을 cp949 로 읽어 `schema` 가 실패하고 테스트는 `Exit: Python UTF-8 모드가 꺼져 있다` 한 줄로 멈춘다 (.bat 은 `env.bat` 이 켠다).
 - 업데이트 (W4 전까지): 새 저장소 zip 을 같은 자리에 풀어 덮어쓴다. `data\real\`·`.venv\`·`output\` 은 zip 에 없어 그대로 남는다
   (새 판에서 지워진 파일은 남는다 — 문제가 되면 새 폴더에 풀고 `data\real\` 만 옮긴 뒤 `setup_offline.bat`). 그 뒤 `selftest.bat`.
