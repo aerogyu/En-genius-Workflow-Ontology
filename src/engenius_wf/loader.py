@@ -90,17 +90,22 @@ def read_yaml(path: Path, rep: Report):
     except UnicodeDecodeError:
         text = raw.decode("cp949", errors="replace")
         rep.warn("Y01", path.name, "UTF-8 이 아니다 (ANSI/cp949 로 읽음)", "메모장 '다른 이름으로 저장' → 인코딩 UTF-8")
+    return read_yaml_text(text, path.name, rep)
+
+
+def read_yaml_text(text: str, name: str, rep: Report):
+    """YAML 글자 → LDict (문제가 있으면 rep 에 남기고 None). name = 메시지에 쓰는 파일 이름. read_yaml 이 파일을 디코드한 뒤 부른다."""
     bad = False
     for i, ln in enumerate(text.splitlines(), 1):
         lead = ln[: len(ln) - len(ln.lstrip(" \t　"))]
         if "\t" in lead:
-            rep.err("Y02", (path.name, i), "들여쓰기에 탭 문자", "탭 대신 스페이스로")
+            rep.err("Y02", (name, i), "들여쓰기에 탭 문자", "탭 대신 스페이스로")
             bad = True
         if "　" in ln:
-            rep.err("Y02", (path.name, i), "전각 공백(한글 입력 중 스페이스)", "한/영 키를 영문으로 바꾸고 스페이스를 다시")
+            rep.err("Y02", (name, i), "전각 공백(한글 입력 중 스페이스)", "한/영 키를 영문으로 바꾸고 스페이스를 다시")
             bad = True
         if any(q in ln for q in "“”‘’"):
-            rep.warn("Y05", (path.name, i), "둥근 따옴표(“ ” ‘ ’) — YAML 은 곧은 따옴표(\" ')만 안다")
+            rep.warn("Y05", (name, i), "둥근 따옴표(“ ” ‘ ’) — YAML 은 곧은 따옴표(\" ')만 안다")
     if bad:
         return None
     loader = _Loader(text)
@@ -127,17 +132,17 @@ def read_yaml(path: Path, rep: Report):
             elif re.match(r"^\s*(-\s+)?[^\s:#]+:\S", src):
                 msg, hint = "콜론 뒤에 공백이 없다", "'칸: 값' 처럼 콜론 뒤에 공백 한 칸 (예 tools: cfx)"
         src = lines[line - 1].strip() if 0 < line <= len(lines) else ""
-        rep.err("Y03", (path.name, line), f"{msg}:  {src}", hint)
+        rep.err("Y03", (name, line), f"{msg}:  {src}", hint)
         return None
     finally:
         loader.dispose()
     for line, m_, h in loader.dups:
-        rep.err("Y04", (path.name, line), m_, h)
+        rep.err("Y04", (name, line), m_, h)
     if loader.dups:
         return None
     if data is None or data == "":
         return LDict()
     if not isinstance(data, dict):
-        rep.err("S02", path.name, "파일 맨 위는 'steps:' 같은 칸 이름이어야 한다")
+        rep.err("S02", name, "파일 맨 위는 'steps:' 같은 칸 이름이어야 한다")
         return None
     return data

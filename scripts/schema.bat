@@ -1,5 +1,6 @@
 @echo off
-rem LinkML schema -> schema\generated\ (terms.json, wfo_file.schema.json, wfo.shacl.ttl, wfo.owl.ttl, lint.txt).
+rem LinkML schema -> schema\generated\ (terms.json, wfo_file.schema.json, wfo_authoring.schema.json,
+rem   wfo.shacl.ttl, wfo.owl.ttl, lint.txt). wfo_authoring.schema.json = VS Code writing aid (docs\02 section 1-1).
 rem Run it after editing schema\wfo.yaml; the build itself only reads schema\generated\ (linkml is imported here only).
 rem   Double-click                      -> regenerate
 rem   scripts\schema.bat --check        -> only report whether schema\generated\ matches schema\wfo.yaml (drift)

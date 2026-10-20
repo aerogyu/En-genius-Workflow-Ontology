@@ -3,7 +3,9 @@
 LinkML 스키마(schema/wfo.yaml)가 마스터다. **linkml 은 이 모듈에서만 import 한다** — 빌드 런타임은 생성물만 읽는다
 (linkml→curies→pystow 가 홈 폴더에 쓰는 부작용 회피). 만드는 것 (schema/generated/):
   terms.json            클래스·슬롯 → RDF IRI·범위 (빌드가 술어 IRI 와 형 변환에 씀)
-  wfo_file.schema.json  YAML 파일 모양 검사용 (gen-json-schema --closed)
+  wfo_file.schema.json  YAML 파일 모양 검사용 (gen-json-schema --closed) — normalize 가 짧은 표기를 펼친 뒤의 정본 모양
+  wfo_authoring.schema.json  VS Code(Red Hat YAML 확장) 작성용 — 손으로 쓰는 짧은 표기 그대로 (authoring.py, + config/rules.yaml·units.yaml
+                        저장소 기본값). 빌드는 읽지 않는다
   wfo.shacl.ttl         RDF 모양 검사용 (gen-shacl + 정리: @ko 라벨 = rdf:langString, YAML 용기 클래스 제외)
   wfo.owl.ttl           Protégé·Graph Studio 보기용 (gen-owl + 정리 + alignment.ttl)
   lint.txt              linkml lint 결과
@@ -44,7 +46,7 @@ BANNER = "# 자동 생성 — 직접 고치지 말 것. 원본: schema/wfo.yaml 
 LABEL_PROPS = (RDFS.label,)
 # OWL 2 주석 속성으로 쓰는 slot_uri — 클래스 제약(owl:onProperty)에 둘 수 없다
 ANNOTATION_PROPS = LABEL_PROPS + (SKOS.notation, SKOS.note, SKOS.definition, SKOS.broader, OWL.versionInfo)
-FILES = ("lint.txt", "wfo_file.schema.json", "wfo.shacl.ttl", "wfo.owl.ttl", "terms.json")
+FILES = ("lint.txt", "wfo_file.schema.json", "wfo_authoring.schema.json", "wfo.shacl.ttl", "wfo.owl.ttl", "terms.json")
 
 
 def canon_ttl(g: Graph) -> str:
@@ -241,11 +243,42 @@ def build_terms() -> str:
     return json.dumps(out, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
 
 
+def authoring_model() -> dict:
+    """작성용 JSON Schema 의 입력 — LinkML 의 클래스·유도 슬롯(slot_usage 반영): 범위·여러 값·필수·식별자·패턴·하한·설명·'(빌드)'."""
+    from linkml_runtime.utils.schemaview import SchemaView
+    sv = SchemaView(str(SCHEMA))
+    classes = {}
+    for c in sv.all_classes():
+        slots = {}
+        for sn in sv.class_slots(c):
+            s = sv.induced_slot(sn, c)
+            desc = s.description or ""
+            slots[sn] = {"range": "|".join(x.range for x in s.any_of) if s.any_of else s.range,
+                         "multivalued": bool(s.multivalued), "required": bool(s.required or s.identifier),
+                         "identifier": bool(s.identifier), "pattern": s.pattern, "minimum": s.minimum_value,
+                         "description": desc, "built": desc.startswith("(빌드)")}
+        classes[c] = {"description": sv.get_class(c).description or "", "slots": slots}
+    enums = {e: [(str(k), v.description or "") for k, v in sv.get_enum(e).permissible_values.items()] for e in sv.all_enums()}
+    return {"classes": classes, "enums": enums}
+
+
+def build_authoring() -> str:
+    """wfo_authoring.schema.json — 저장소 config/ 기본값만 (사내 오버레이를 넣으면 사내 드리프트 감시가 흔들린다).
+    ensure_ascii: 한국어를 \\u 로 — 편집기가 파일 인코딩을 무엇으로 읽든 선택지 글자(메일·수기 전달 등)가 깨지지 않게."""
+    from engenius_wf.authoring import build_authoring_schema
+    from engenius_wf.config import load_rules, load_units
+
+    units, aliases = load_units()
+    schema = build_authoring_schema(authoring_model(), load_rules(), units, aliases)
+    return json.dumps(schema, ensure_ascii=True, indent=1) + "\n"
+
+
 def generate() -> tuple[dict[str, str], int, list[str]]:
     """(생성물 이름 → 내용, OWL 정리에서 지운 외부 주어 트리플 수, lint 문제 목록) — 파일은 쓰지 않는다."""
     probs = lint()
     owl, removed = build_owl()
     files = {"lint.txt": "\n".join(probs) + "\n", "wfo_file.schema.json": build_json_schema(),
+             "wfo_authoring.schema.json": build_authoring(),
              "wfo.shacl.ttl": build_shacl(), "wfo.owl.ttl": owl, "terms.json": build_terms()}
     return files, removed, probs
 

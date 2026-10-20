@@ -17,6 +17,11 @@ from engenius_wf.report import Report
 # 한 줄 항목의 첫 칸 → (자료형, 기본 단위)
 SHORT_TYPES = {"int": ("integer", "1"), "정수": ("integer", "1"), "text": ("string", None), "문자": ("string", None),
                "bool": ("boolean", None), "참거짓": ("boolean", None), "file": ("file", None), "파일": ("file", None)}
+# 정수·실수 칸에서 숫자로 바꾸는 글자 (앞뒤 공백을 뗀 뒤 전체 일치) — 작성용 JSON Schema(authoring)도 같은 식을 쓴다
+INT_TEXT = r"[+-]?\d+"
+FLOAT_TEXT = r"[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?"
+# 한 줄 항목 셋째 칸에 쓸 수 있는 낱말 (안 쓰면 필수)
+OPTIONAL_WORDS = ("선택", "optional")
 
 
 class Normalizer:
@@ -63,7 +68,7 @@ class Normalizer:
                 out[k] = res
             else:
                 out[k] = self.scalar(sl["range"], v)
-                if cls == "InputBinding" and k == "transfer":
+                if cls == "InputBinding" and k == "transfer" and isinstance(out[k], str):   # 목록·묶음이면 모양 검사(S02)가 잡게 그대로
                     out[k] = self.rules["transfer_aliases"].get(out[k], out[k])
         if cls == "InterfaceItem" and "type" not in out:
             out["type"] = "number"
@@ -82,9 +87,9 @@ class Normalizer:
                 return True
             if s.lower() in self.fw:
                 return False
-        elif rng == "integer" and re.fullmatch(r"[+-]?\d+", s):
+        elif rng == "integer" and re.fullmatch(INT_TEXT, s):
             return int(s)
-        elif rng == "float" and re.fullmatch(r"[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?", s):
+        elif rng == "float" and re.fullmatch(FLOAT_TEXT, s):
             return float(s)
         return s
 
@@ -149,7 +154,7 @@ class Normalizer:
         if len(parts) > 1 and parts[1]:
             d["label"] = parts[1]
         if len(parts) > 2:
-            if parts[2] in ("선택", "optional"):
+            if parts[2] in OPTIONAL_WORDS:
                 d["required"] = "false"
             elif parts[2]:
                 self.rep.err("S02", (self.f, line), f"항목 '{name}' 셋째 칸 '{parts[2]}' — 셋째 칸에는 '선택' 만 쓴다")

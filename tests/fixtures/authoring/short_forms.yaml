@@ -1,0 +1,51 @@
+# 작성용 JSON Schema 시험 — 로더가 받는 짧은·까다로운 표기 모음 (모양 단계만 맞으면 된다: 참조가 실제로 있는지는 보지 않는다).
+# tests/test_authoring.py 가 이 파일을 세 가지로 읽어(전부 글자 · YAML 1.1 · YAML 1.2) 작성용 스키마를 통과하는지 본다.
+discipline: perf
+plan: {key: p, label: 워크플로, phase: 개념설계, version: 1.10}      # 1.10 — YAML 1.2 는 숫자 1.1, 로더는 글자 '1.10'
+disciplines: {key: perf, label: 성능, related_parts: 'A1, B2'}       # 목록이 아니라 묶음 하나여도 받는다
+tools:
+  - {key: excel, label: Excel, tool_id: '', note: yes}             # 빈 글자 = 안 적은 것 · yes 는 글자
+  - key: true                                                      # 로더: key 'true' (형식에 맞음) — YAML 1.2 는 참거짓
+    label: 2026
+steps:
+  - key: perf-a
+    label: 가
+    tools: excel, true
+    after: [perf-b]
+    status:
+    inputs: {interface: if-x, transfer: 메일, format: '001'}       # 한 건이면 묶음 하나 · 별칭 · 숫자 같은 확장자
+    outputs: [if-y, {interface: if-z, format: 7z}]
+  - key: perf-b
+    label: 나
+    inputs: if-y , , if-z                                         # 빈 조각은 버린다
+interfaces:
+  - key: if-y
+    label: 와이
+    version: 0.1.0
+    external: 예
+    deliverable: X
+    records: {name: Row, items: [{name: a, type: string}]}       # 긴 형식의 type 은 선택지 (text 는 한 줄 형식의 낱말)
+    items:
+      - W2: kg/s | 유량 | optional
+      - {name: PR, unit: 1, required: o, list: no, min_items: '3', minimum: -1.5e3, maximum: .5}
+      - n: int[] |
+      - flag: bool
+      - rows: {type: struct, ref: Row, list: TRUE}
+      - src: {type: enum, values: [yes, no, 1.10, true]}
+      - PR_c: 1                                                    # YAML 1.2 는 정수 1, 로더는 첫칸 '1'
+      - z: true                                                    # 로더: 첫칸 'true' = 단위 (모르는 단위는 check 의 U02 — 의미)
+      - mesh: FILE:cgns / cas.h5 [] | 메시                         # 대소문자 무시 접두 · 조각 앞뒤 공백은 뗀다 · 목록
+      - rec: struct:Row
+  - key: if-z
+    label: 제트
+    version: 1.0.0
+    items: {f: 'file:csv,txt | 파일', label: text | 이름이 label 인 항목}
+loops:
+  - key: lp
+    label: 루프
+    back_from: perf-b
+    back_to: perf-a
+    until: 0.5
+    max_iterations: '05'
+    monitor: if-y.W2, if-z.f
+    include: []
