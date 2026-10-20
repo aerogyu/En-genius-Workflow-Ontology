@@ -24,6 +24,9 @@ KEY_HINT = {"key": "영문 소문자·숫자·하이픈 (예 cmp-meanline)", "re
             "tool_id": "TOOL-000123 꼴 (Tool 온톨로지 TOOL ID)", "formats": "소문자·점 없이 (csv, cas.h5)",
             "format": "소문자·점 없이 (csv)", "monitor": "계약key.항목 (예 if-perf-od.mismatch)"}
 PERSON_FIELDS = {"담당", "담당자", "작성자", "문의", "실무 문의처", "owner_name", "person", "author"}
+# 값이 빈 모르는 칸 — { } 한 줄 묶음 안에서는 쉼표가 칸을 나눠 쉼표 뒤 조각이 '값 없는 칸' 으로 읽힌다 (normalize 가 남겨 둔다)
+EMPTY_KEY_HINT = ("값이 빈 칸 — { } 한 줄 안에 쉼표로 값을 여럿 적었다면 쉼표 뒤 조각이 칸 이름으로 읽힌 것: { } 안의 목록은 [a, b] "
+                  "(예 formats: [pdf, docx]), 숫자에는 천 단위 쉼표를 쓰지 않는다 (1,000 → 1000)")
 
 
 def shape_validator(gen_dir: Path | None = None):
@@ -55,7 +58,10 @@ def check_shape(fname, data, validator, terms: Terms, rep: Report):
                 if b in PERSON_FIELDS:
                     rep.err("S01", (fname, line), f"'{b}' 칸은 둘 수 없다 — 인명은 저장하지 않는다 (절대 규칙 5)")
                 else:
-                    rep.err("S01", (fname, line), f"모르는 칸 '{b}'" + (f" ({path})" if path else ""), suggest(b, allowed))
+                    hint = suggest(b, allowed)
+                    if isinstance(e.instance, dict) and e.instance.get(b) in ("", None):     # 값 없는 모르는 칸 = 대개 { } 안 쉼표
+                        hint = (hint + " / " if hint else "") + EMPTY_KEY_HINT
+                    rep.err("S01", (fname, line), f"모르는 칸 '{b}'" + (f" ({path})" if path else ""), hint)
         elif v == "required":
             miss = re.findall(r"'([^']+)' is a required property", e.message)
             rep.err("S03", (fname, line), f"{path or '파일'}: 필수 칸 '{', '.join(miss)}' 이 없다")

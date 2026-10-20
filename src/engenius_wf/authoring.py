@@ -1,11 +1,12 @@
-"""작성용 JSON Schema — VS Code(Red Hat YAML 확장 = yaml-language-server)에서 워크플로 YAML 을 쓰는 동안 자동완성·빨간 줄·설명.
+"""작성용 JSON Schema — VS Code(Red Hat YAML 확장 = yaml-language-server)에서 워크플로 YAML 을 쓰는 동안 자동완성·물결 밑줄·설명.
+(확장 1.25.0 은 스키마 위반을 전부 경고 = 노란 물결로 긋는다 — 빨간 물결은 YAML 문법 오류뿐. check 에서는 같은 것이 S01~S04 오류다.)
 
 빌드의 모양 검사(generated/wfo_file.schema.json)는 normalize 가 짧은 표기를 펼친 **뒤** 의 정본 모양을 본다. 사람이 손으로 쓰는
 짧은 표기(tools: excel · 'a, b' 쉼표 목록 · 계약 항목 한 줄 '단위 | 설명 [| 선택]' · transfer 별칭 '수기' · 참거짓 낱말 '예/o/x')를
 그 스키마에 대면 틀렸다고 나온다. 이 스키마(generated/wfo_authoring.schema.json)는 펼치기 **전** — 편집기가 읽은 그대로를 본다.
 
 원칙 (tests/test_authoring.py 가 로더와 묶는다)
-  ① 로더(loader → normalize → check_shape)가 받는 것은 받는다 — 거짓 빨간 줄 0.
+  ① 로더(loader → normalize → check_shape)가 받는 것은 받는다 — 거짓 밑줄 0.
      yaml-language-server 는 YAML 1.2 로 읽는다 ('version: 0.1' → 숫자, '1.10' → 숫자 1.1, 'true' → 참거짓, 'yes'·'o' → 글자).
      로더는 모든 값을 글자로 읽으므로 칸마다 '그 칸 형식에 맞는 글자가 YAML 1.2 에서 숫자·참거짓이 될 수 있으면' 그 형도 받는다.
      빈칸(null·'')은 로더가 '안 적은 것' 으로 넘기므로 필수가 아닌 칸에서는 받는다.
@@ -13,11 +14,11 @@
      S03 필수 칸 없음, S04 빌드 칸, 계약 항목 한 줄의 '|' 규칙(S02 · 첫칸이 비면 U01).
   ③ 참조 칸(tools·inputs·after·back_to …)은 key 형식만 본다 — 형식이 틀린 key 는 아무것도 가리킬 수 없다 (check 에서 R01 이 반드시 난다).
      있는지(R01)·중복(R02)·plan 한 번(R04)·단위(U)·흐름(F)·루프(L)·판(V)·레지스트리(G)·인명 메모(P)는 check.bat 몫.
-  알려진 차이 (docs/02 1-1장) — 편집기가 더 엄격: 빈 값이라도 모르는 칸·빌드 칸·담당자 칸, 필수 칸에 글자로 쓴 'null'·'~',
+  알려진 차이 (docs/02 1-1장) — 편집기가 더 엄격: 빈 값의 빌드 칸, 필수 칸에 글자로 쓴 'null'·'~',
   사내 오버레이에서 더한 전달 방법 별칭·참거짓 낱말. 편집기가 더 너그러움: YAML 1.2 가 숫자·참거짓으로 바꾼 값은 원래 글자를 모른다
-  (예: 'key: True' 는 빨간 줄이 없지만 check 는 S02).
+  (예: 'key: True' 는 밑줄이 없지만 check 는 S02). 빈 값의 모르는 칸·담당자 칸은 로더도 S01 이다 ({ } 안 쉼표 목록이 조각을 잃지 않게).
 파일 하나에 어느 절이 와도 된다 — 로더가 모든 파일을 같은 WorkflowFile 모양으로 읽고, plan 이 전체에서 한 번인지는 파일을 합친 뒤(R04)
-본다 → 스키마 하나 (_plan.yaml 용·분야 파일용으로 나누면 빌드는 받는데 편집기만 빨간 줄인 경우가 생긴다).
+본다 → 스키마 하나 (_plan.yaml 용·분야 파일용으로 나누면 빌드는 받는데 편집기만 밑줄인 경우가 생긴다).
 
 입력: LinkML 스키마의 클래스·슬롯 모형(schema_gen.authoring_model — linkml 은 거기서만 import) + config/rules.yaml(전달 방법 별칭·
 참거짓 낱말) + config/units.yaml(단위 — 자동완성 후보·설명에만, 검사하지 않음). 저장소 config 기본값만 쓴다 (사내 오버레이는 넣지
@@ -50,7 +51,7 @@ FREE = ["string", "number", "boolean"]                 # 자유 글자 칸 — Y
 KO = {"Workflow": "워크플로", "Discipline": "분야", "Component": "구성품", "ToolRef": "툴", "Step": "단계", "Interface": "계약",
       "Loop": "루프", "Record": "묶음", "InputBinding": "받는 데이터 한 건", "OutputBinding": "내놓는 데이터 한 건",
       "InterfaceItem": "계약 항목", ROOT: "YAML 파일 하나"}
-MULTI_NOTE = "여럿이면 `a, b` 처럼 쉼표로, 또는 목록(`- a`)."
+MULTI_NOTE = "여럿이면 `a, b` 처럼 쉼표로, 또는 목록(`- a`). `{ }` 한 줄 안에서는 `[a, b]` (거기서 맨 쉼표는 칸을 나눈다)."
 
 # 칸 설명에 덧붙이는 작성 안내 (markdown). 키 = (클래스, 칸) 또는 (None, 칸 — 모든 클래스). <<이름>> 은 설정에서 채운다.
 NOTES = {
@@ -186,7 +187,8 @@ def short_item_pattern(formats_pattern: str, ref_pattern: str) -> str:
     """계약 항목 한 줄 '첫칸 | 설명 | 선택' — normalize.short_item 과 같은 규칙:
     첫칸은 비울 수 없다(U01 — '[]' 만 있어도 빈 것). 'file:'·'파일:'(대소문자 무시) 뒤 확장자는 [,/] 로 나눈 조각마다(앞뒤 공백은 뗀다)
     확장자 형식 — 빈 조각도 틀림 (S02). 'struct:' 뒤는 묶음 이름·계약 key 형식(원칙 ③). 그 밖의 첫칸(단위·int·text·enum:…)은 글자 아무거나
-    (단위는 check 의 U02). '|' 는 두 번까지, 셋째 칸은 '선택' 만 (S02). 끝의 '[]' = 목록."""
+    (단위는 check 의 U02 · 'enum:' 뒤는 normalize 가 [,/] 로 나눠 빈 조각을 버린다 — 선택지가 하나도 없으면 check 의 C02).
+    '|' 는 두 번까지, 셋째 칸은 '선택' 만 (S02). 끝의 '[]' = 목록."""
     opt = "|".join(_js_escape(w) for w in OPTIONAL_WORDS)
     file_pfx = "(?:" + "|".join(_any_case(w) for w, (t, _) in SHORT_TYPES.items() if t == "file") + "):"
     struct_pfx = _any_case("struct") + ":"
@@ -453,7 +455,7 @@ class _Builder:
                                       {"$ref": DEF + "InterfaceItem"},
                                       {"type": ["number", "boolean"]}],       # YAML 1.2 의 'PR: 1' — 로더는 글자 '1' (첫칸 = 단위 1)
                             "examples": ["kg/s | 설명", "1 | 설명", "퍼센트 | 설명", "int | 설명", "text | 설명", "file:csv | 설명",
-                                         "enum:A/B/C | 설명", "struct:MapPoint[] | 설명", "kg/s | 설명 | 선택"]},
+                                         "enum:A/B/C | 설명", "enum:A, B, C | 설명", "struct:MapPoint[] | 설명", "kg/s | 설명 | 선택"]},
             "_item_entry": {"anyOf": [{"$ref": DEF + "_item_named"},
                                       {"type": "object", "minProperties": 1, "maxProperties": 1,
                                        "propertyNames": {"pattern": name_pat, "not": {"enum": slots}, "patternErrorMessage": name_msg},
@@ -472,7 +474,7 @@ class _Builder:
             if typ == "file":
                 shown = " · ".join(f"`{w}:csv,txt`" for w in words)
             rows.append(f"| {shown} | {ko.get(typ, typ)} |")
-        rows += ["| `enum:A/B/C` | 선택지 |", "| `struct:묶음이름` | 같은 계약의 묶음 또는 다른 계약 key |", "| 끝에 `[]` | 목록 |",
+        rows += ["| `enum:A/B/C` · `enum:A, B, C` | 선택지 (글자에 `/`·`,` 가 들면 긴 형식) |", "| `struct:묶음이름` | 같은 계약의 묶음 또는 다른 계약 key |", "| 끝에 `[]` | 목록 |",
                  "", "셋째 칸 `선택` = 필수 아님. " + self.units_md()]
         return "\n".join(rows)
 

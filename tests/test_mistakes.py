@@ -88,3 +88,80 @@ def test_mistake(tmp_path, name, src, edits, code, level, fname, line, rc_want, 
 
 def test_case_count():
     assert len(CASES) == 23
+
+
+# 23종 밖 — 독립 검증(2026-10-20)이 찾은 조용한 실수. 예전에는 엉뚱한 안내(Y03 '% @ ` 기호')이거나 값이 조용히 사라졌다.
+# 값 사이 탭: 메모장에서 칸·주석을 맞추려고 Tab 을 누르거나 엑셀 표를 붙여 넣으면 생긴다 (화면에서는 띄어쓰기처럼 보인다)
+TAB_CASES = [
+    ("콜론 뒤 (항목 한 줄)", "perf.yaml", "W2:   kg/s | 압축기 입구 유량", "W2:\tkg/s | 압축기 입구 유량", 15),
+    ("콜론 뒤 (label)", "perf.yaml", "    label: 설계점 사이클 해석", "    label:\t탈설계점 해석", 5),
+    ("주석 앞", "perf.yaml", "    outputs: if-cycle-dp", "    outputs: if-cycle-dp\t# 메모", 8),
+    ("설명 안 ('|' 뒤)", "perf.yaml", "PR_c: 1    | 압축기 압력비", "PR_c: 1    |\t압축기 압력비", 16),
+    ("'-' 뒤", "cmp.yaml", "      - {interface: if-cycle-dp, transfer: 수기}", "      -\t{interface: if-cycle-dp, transfer: 수기}", 8),
+    ("줄 끝 (보이지 않음)", "cmp.yaml", "    tools: excel", "    tools: excel\t", 6),
+]
+
+
+@pytest.mark.parametrize("name, fname, a, b, line", TAB_CASES, ids=[c[0] for c in TAB_CASES])
+def test_tab_between_values(tmp_path, name, fname, a, b, line):
+    """들여쓰기가 아닌 자리의 탭도 Y02 — 그 줄을 가리키고 탭 자리를 <탭> 으로 보인다 (Y03 '% @ ` 기호' 안내가 아니다)."""
+    d = copy_example(tmp_path, "short", state=False)
+    edit(d / fname, a, b)
+    rc, out = run_cli(["check", d])
+    assert rc == 1, out
+    first = next(ln for ln in out.splitlines() if LINE.match(ln))
+    mt = LINE.match(first)
+    assert (mt.group(1), mt.group(2), mt.group(3), int(mt.group(4) or 0)) == ("오류", "Y02", fname, line), first
+    assert "값 사이에 탭 문자" in first and "<탭>" in first, first
+    assert "탭 대신 스페이스로" in out and "Y03" not in out and "퍼센트" not in out, out
+
+
+def test_tabs_found_all_at_once(tmp_path):
+    """탭은 눈에 안 보이므로 한 번에 다 알린다 (줄마다 check 를 다시 누르지 않게). 따옴표·주석 안의 탭은 YAML 이 받는다 — 오류 아님."""
+    d = copy_example(tmp_path, "short", state=False)
+    edit(d / "perf.yaml", "W2:   kg/s", "W2:\tkg/s")
+    edit(d / "perf.yaml", "Tt4:  K    |", "Tt4:  K\t|")
+    edit(d / "perf.yaml", "    label: 설계점 사이클 해석", "    label: '설계점\t사이클 해석'   # 메모\t메모")
+    rc, out = run_cli(["check", d])
+    assert rc == 1
+    hits = [(m.group(2), int(m.group(4))) for m in map(LINE.match, out.splitlines()) if m]
+    assert hits == [("Y02", 15), ("Y02", 17)], out
+
+
+def test_comma_inside_braces_is_not_lost(tmp_path):
+    """{ } 한 줄 안에서 쉼표는 칸을 나눈다 — 'formats: pdf, docx' 의 docx·'maximum: 1,000' 의 000 이 '값 없는 칸' 이 된다.
+    예전에는 빈 칸으로 조용히 버려 값을 잃었다 (오류 0) → 이제 S01 + { } 안 목록은 [a, b] 안내."""
+    d = copy_example(tmp_path, "short", state=False)
+    edit(d / "cmp.yaml", "map_file:     file:csv | 맵 파일 (속도선별 수정유량·압력비·효율)",
+         "map_file:     {type: file, formats: pdf, docx, label: 보고서}")
+    edit(d / "perf.yaml", "BPR:  1    | 바이패스비 | 선택", "BPR:  {unit: 1, minimum: 0, maximum: 1,000}")
+    edit(d / "_plan.yaml", "{key: perf, label: 성능}", "{key: perf, label: 성능, related_parts: COOL, SAS}")
+    rc, out = run_cli(["check", d])
+    assert rc == 1
+    s01 = [ln for ln in out.splitlines() if "[오류 S01]" in ln]
+    assert len(s01) == 3, out
+    for bad in ("'docx'", "'000'", "'SAS'"):
+        assert any(bad in ln for ln in s01), (bad, out)
+    assert out.count("{ } 안의 목록은 [a, b]") == 3, out
+    # 고친 꼴은 통과 — { } 안에서 목록은 [a, b], 숫자에 천 단위 쉼표 없이
+    edit(d / "cmp.yaml", "formats: pdf, docx,", "formats: [pdf, docx],")
+    edit(d / "perf.yaml", "maximum: 1,000}", "maximum: 1000}")
+    edit(d / "_plan.yaml", "related_parts: COOL, SAS}", "related_parts: [COOL, SAS]}")
+    rc, out = run_cli(["check", d])
+    assert "[오류" not in out, out
+
+
+def test_enum_short_form_splits_on_comma(tmp_path):
+    """한 줄 항목 'enum:A, B, C' 도 선택지 셋 (file: 처럼 ',' 와 '/' 둘 다로 나눈다) — 예전에는 값 하나 '1D, CFD, 시험' 으로 조용히 들어갔다."""
+    import json
+
+    d = copy_example(tmp_path, "short", state=False)
+    edit(d / "perf.yaml", "      BPR:  1    | 바이패스비 | 선택\n",
+         "      BPR:  1    | 바이패스비 | 선택\n      how:  enum:1D, CFD, 시험 | 계산 방법\n      src:  enum:A/B, C | 출처\n")
+    out_dir = tmp_path / "out"
+    rc, out = run_cli(["build", d, "--out", out_dir])
+    assert rc == 0, out
+    canon = json.loads((out_dir / "canonical.json").read_text(encoding="utf-8"))
+    items = {it["name"]: it for i in canon["interfaces"] if i["key"] == "if-cycle-dp" for it in i["items"]}
+    assert items["how"]["values"] == ["1D", "CFD", "시험"]
+    assert items["src"]["values"] == ["A", "B", "C"]

@@ -2,7 +2,7 @@
 
 yaml.BaseLoader 를 쓴다: yes/no/0.1/1.10 을 바꾸지 않고 글자 그대로 (YAML 1.1 함정 원천 차단). 참/거짓·정수는 스키마상
 그 형인 칸에서만 normalize 가 바꾼다. 묶음·목록은 행 번호를 품는 LDict·LList 로 읽어 모든 메시지가 파일 행을 가리킨다.
-코드: Y01 cp949(ANSI) 저장(경고) · Y02 탭·전각 공백 · Y03 YAML 문법(한국어 번역) · Y04 같은 칸 두 번 · Y05 둥근 따옴표(경고).
+코드: Y01 cp949(ANSI) 저장(경고) · Y02 탭(들여쓰기·값 사이·주석 앞)·전각 공백 · Y03 YAML 문법(한국어 번역) · Y04 같은 칸 두 번 · Y05 둥근 따옴표(경고).
 """
 
 from __future__ import annotations
@@ -93,19 +93,51 @@ def read_yaml(path: Path, rep: Report):
     return read_yaml_text(text, path.name, rep)
 
 
+TAB_HINT = "탭 대신 스페이스로 — 칸·주석을 맞추려고 Tab 키를 눌렀거나 엑셀 표를 붙여 넣으면 생긴다 (화면에서는 띄어쓰기처럼 보인다)"
+
+
+def tab_stops(text: str) -> list[int]:
+    """PyYAML 이 걸려 넘어지는 탭의 행 — 들여쓰기만이 아니라 콜론 뒤·주석 앞·값 사이·'- ' 자리도 ('found character \\t that cannot
+    start any token' — 그대로 두면 Y03 '% @ ` 같은 기호' 라는 엉뚱한 안내가 된다). 따옴표 안·주석 안·블록 글자(|·>) 안의 탭은 YAML 이
+    받으므로 걸리지 않는다. 걸린 탭을 스페이스로 바꿔 가며 다시 훑어 전부 찾는다 (한 번에 다 알린다 — 탭은 눈에 안 보인다)."""
+    if "\t" not in text:
+        return []
+    found = []
+    for _ in range(text.count("\t")):
+        try:
+            for _tok in yaml.scan(text, Loader=_Loader):
+                pass
+            break
+        except yaml.MarkedYAMLError as e:
+            m = e.problem_mark
+            if m is None or "'\\t'" not in str(e.problem or "") or text[m.index: m.index + 1] != "\t":
+                break                                  # 탭이 아닌 문법 오류 — 본 읽기(Y03)가 알린다
+            found.append(m.line + 1)
+            text = text[: m.index] + " " + text[m.index + 1:]
+    return sorted(set(found))
+
+
 def read_yaml_text(text: str, name: str, rep: Report):
     """YAML 글자 → LDict (문제가 있으면 rep 에 남기고 None). name = 메시지에 쓰는 파일 이름. read_yaml 이 파일을 디코드한 뒤 부른다."""
     bad = False
-    for i, ln in enumerate(text.splitlines(), 1):
+    lines = text.splitlines()
+    lead_tabs = set()
+    for i, ln in enumerate(lines, 1):
         lead = ln[: len(ln) - len(ln.lstrip(" \t　"))]
         if "\t" in lead:
             rep.err("Y02", (name, i), "들여쓰기에 탭 문자", "탭 대신 스페이스로")
+            lead_tabs.add(i)
             bad = True
         if "　" in ln:
             rep.err("Y02", (name, i), "전각 공백(한글 입력 중 스페이스)", "한/영 키를 영문으로 바꾸고 스페이스를 다시")
             bad = True
         if any(q in ln for q in "“”‘’"):
             rep.warn("Y05", (name, i), "둥근 따옴표(“ ” ‘ ’) — YAML 은 곧은 따옴표(\" ')만 안다")
+    for i in tab_stops(text):
+        if i not in lead_tabs and 0 < i <= len(lines):
+            src = lines[i - 1].strip(" ").replace("\t", "<탭>")        # 줄 끝 탭도 보이게 (공백만 뗀다)
+            rep.err("Y02", (name, i), f"값 사이에 탭 문자 (콜론 뒤·주석 앞·'-' 뒤 등):  {src}", TAB_HINT)
+            bad = True
     if bad:
         return None
     loader = _Loader(text)

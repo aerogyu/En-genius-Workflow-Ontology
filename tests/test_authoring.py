@@ -7,7 +7,7 @@
      스키마는 통과시킨다 — check.bat 몫 (MISTAKE_SCOPE 에 사유). YAML 읽기 오류(Y)는 스키마가 아니라 확장 자체·check 가 알린다.
      더해 모양 오류 주입(SHAPE_CASES)은 로더와 스키마가 둘 다 막는지 본다.
   ③ 변이 시험 (3천여 건, 10초 남짓): 예시의 값 하나를 까다로운 글자로 바꾸거나, 칸·항목 하나를 지우거나, 묶음에 모르는 칸·담당자 칸을
-     더해 로더와 스키마의 판정을 비교한다 — 로더가 받으면 스키마도 받는다(거짓 빨간 줄 0). YAML 1.2 가 글자로 읽는 값·지우기·더하기에서는
+     (값이 있게·빈 값으로) 더해 로더와 스키마의 판정을 비교한다 — 로더가 받으면 스키마도 받는다(거짓 밑줄 0). YAML 1.2 가 글자로 읽는 값·지우기·더하기에서는
      로더가 막으면 스키마도 막는다. (스키마를 일부러 고장 내 보면 — 숫자 판 거부·key 형식 안 봄·참거짓 낱말 거부·필수 안 봄·모르는 칸 허용 —
      각각 이 시험이 잡는 것을 개발 때 확인했다.)
      (YAML 1.2 가 숫자·참거짓으로 바꾸는 값은 원래 글자를 모르므로 스키마가 너그러울 수 있다 — 알려진 차이, docs/02 1-1장.)
@@ -15,6 +15,7 @@
   ④ 스키마 자체: Draft7Validator.check_schema · 외부 참조 0 · JS 와 파이썬이 같게 읽는 정규식 · 클래스 칸이 LinkML(terms.json)과 같다 ·
      설정(rules.yaml)에서 만든다. 드리프트(--check)는 test_schema.test_generated_files_up_to_date 가 본다.
 yaml-language-server 자체는 이 PC 에 없다 — 메시지 문구·자동완성·마우스 설명은 사내 VS Code 에서 처음 확인한다.
+(확장 1.25.0 은 스키마 위반을 전부 '경고' 로 낸다 — 편집기에서는 노란 물결, 빨간 물결은 YAML 문법 오류뿐. 이 파일의 '밑줄' = 스키마 오류.)
 """
 
 from __future__ import annotations
@@ -197,7 +198,7 @@ def test_example_set_covers_short_forms():
                  # short_forms.yaml
                  "version: 1.10}", "external: 예", "deliverable: X", "required: o", "list: no", "list: TRUE", "values: [yes, no, 1.10, true]",
                  "tool_id: ''", "- key: true", "status:\n", "format: '001'", "if-y , , if-z", "| optional", "- PR_c: 1", "- z: true",
-                 "FILE:cgns / cas.h5 []", "max_iterations: '05'", "monitor: if-y.W2, if-z.f", "disciplines: {key:"):
+                 "FILE:cgns / cas.h5 []", "max_iterations: '05'", "monitor: if-y.W2, if-z.f", "disciplines: {key:", "enum:1D, CFD/시험"):
         assert frag in text, frag
 
 
@@ -205,7 +206,8 @@ def test_example_set_covers_short_forms():
 MISTAKE_SCOPE = {
     # 스키마가 잡는다 (모양)
     "S01": "caught", "S02": "caught", "S04": "caught",
-    # YAML 읽기 — 스키마가 아니라 확장 자체(문법 빨간 줄·'Map keys must be unique')와 check 가 알린다
+    # YAML 읽기 — 스키마가 아니라 확장 자체(문법 오류 빨간 물결·'Map keys must be unique')와 check 가 알린다.
+    # 값 사이 탭(Y02)은 YAML 1.2 가 띄어쓰기로 받아 확장이 조용할 수 있다 — test_mistakes.test_tab_between_values
     "Y01": "encoding", "Y02": "unparsable", "Y03": "unparsable", "Y04": "reader",
     # 의미 — 모양은 맞으니 스키마는 통과시킨다 (check.bat 몫)
     "R01": "semantic", "R02": "semantic", "U01": "semantic", "U02": "semantic", "F01": "semantic", "D01": "semantic",
@@ -281,6 +283,14 @@ SHAPE_CASES = [
     ("key 앞 대문자", "short", "perf.yaml", "  - key: if-cycle-dp", "  - key: IF-cycle-dp", "S02"),
     ("label 에 목록", "short", "perf.yaml", "    label: 설계점 사이클 결과", "    label: [가, 나]", "S02"),
     ("참조 key 형식 (tools)", "short", "perf.yaml", "    tools: gasturb", "    tools: Gas Turb", "R01(형식)"),
+    # { } 한 줄 안의 쉼표는 칸을 나눈다 — 쉼표 뒤 조각이 '값 없는 칸' 이 된다 (로더도 S01 — 예전에는 조용히 버려 값을 잃었다)
+    ("{ } 안 쉼표 목록 (related_parts)", "short", "_plan.yaml", "{key: perf, label: 성능}",
+     "{key: perf, label: 성능, related_parts: COOL, SAS}", "S01"),
+    ("{ } 안 쉼표 목록 (formats)", "short", "cmp.yaml", "map_file:     file:csv | 맵 파일 (속도선별 수정유량·압력비·효율)",
+     "map_file:     {type: file, formats: pdf, docx, label: 보고서}", "S01"),
+    ("{ } 안 천 단위 쉼표", "short", "perf.yaml", "BPR:  1    | 바이패스비 | 선택", "BPR:  {unit: 1, minimum: 0, maximum: 1,000}", "S01"),
+    ("값 없는 모르는 칸", "short", "cmp.yaml", "    max_iterations: 5", "    max_iterations: 5\n    oops:", "S01"),
+    ("값 없는 담당자 칸", "short", "cmp.yaml", "    max_iterations: 5", "    max_iterations: 5\n    담당자:", "S01"),
 ]
 
 
@@ -296,12 +306,11 @@ def test_shape_mistakes_caught_by_both(av, tmp_path, name, src, fname, a, b, cod
 
 
 def test_known_stricter_cases(av, tmp_path):
-    """알려진 차이 (docs/02 1-1장) — 편집기가 더 엄격: 빈 값이라도 빌드 칸·모르는 칸·담당자 칸은 빨간 줄 (로더는 빈칸을 '안 적은 것' 으로
-    넘긴다), 필수 칸에 글자로 쓴 null 은 빈칸으로 본다 (로더는 글자 'null')."""
+    """알려진 차이 (docs/02 1-1장) — 편집기가 더 엄격: 빈 값의 빌드 칸은 밑줄 (로더는 아는 칸의 빈칸을 '안 적은 것' 으로 넘긴다 —
+    잃는 값이 없다), 필수 칸에 글자로 쓴 null 은 빈칸으로 본다 (로더는 글자 'null'). 빈 값의 모르는 칸·담당자 칸은 로더도 S01 이라
+    이제 차이가 아니다 (SHAPE_CASES 의 '값 없는 …'·'{ } 안 쉼표 …')."""
     base = (EXAMPLES_DIR / "short" / "cmp.yaml").read_text(encoding="utf-8")
     cases = [base.replace("    max_iterations: 5", "    max_iterations: 5\n    members: ''"),
-             base.replace("    max_iterations: 5", "    max_iterations: 5\n    oops:"),
-             base.replace("    max_iterations: 5", "    max_iterations: 5\n    담당자:"),
              base.replace("    label: 압축기 특성 맵", "    label: null")]
     for i, text in enumerate(cases):
         p = tmp_path / f"c{i}.yaml"
@@ -375,7 +384,8 @@ def _prune(tree, path, top=True):
     return t, (head,) + rp
 
 
-ADDED_KEYS = {"zz": "abc", "담당자": "x"}                # 묶음마다 모르는 칸·담당자 칸 더하기 (계약 항목 묶음에서는 항목 이름이라 받는다)
+# 묶음마다 모르는 칸·담당자 칸 더하기 — 값이 빈 것도 ({ } 안 쉼표 조각). 계약 항목 묶음에서는 항목 이름이라 'abc'·'x' 는 받고 빈 값은 U01
+ADDED_KEYS = {"zz": "abc", "담당자": "x", "yy": "", "작성자": ""}
 
 
 def _mutations():
@@ -424,7 +434,7 @@ def test_mutations_loader_and_schema_agree(av):
         if two_way and not ok and sch:
             missed.append(f"{what} {codes}")
     assert n > 1000
-    assert false_red == [], f"거짓 빨간 줄 {len(false_red)}건: " + "\n".join(false_red[:20])
+    assert false_red == [], f"거짓 밑줄 {len(false_red)}건: " + "\n".join(false_red[:20])
     assert missed == [], f"스키마가 놓친 모양 오류 {len(missed)}건: " + "\n".join(missed[:20])
 
 

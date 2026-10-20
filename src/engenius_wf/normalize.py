@@ -39,12 +39,12 @@ class Normalizer:
         out.line = getattr(d, "line", line)
         for k, v in d.items():
             kl = getattr(d, "klines", {}).get(k, out.line)
-            if v == "" or v is None:              # 빈칸 = 안 적은 것
+            sl = self.T.slot(cls, k)
+            if (v == "" or v is None) and sl is not None:      # 아는 칸의 빈칸 = 안 적은 것
                 continue
             out.klines[k] = kl
-            sl = self.T.slot(cls, k)
-            if sl is None:
-                out[k] = v
+            if sl is None:                        # 모르는 칸·담당자 칸은 값이 비어도 남겨 모양 검사가 S01 을 낸다 — { } 안 쉼표 목록
+                out[k] = v                        # ('formats: pdf, docx' → 칸 'docx')·천 단위 쉼표('maximum: 1,000' → 칸 '000')가 조용히 사라지지 않게
                 continue
             nested = NESTED.get((cls, k))
             if cls == "Interface" and k == "items" or cls == "Record" and k == "items":
@@ -124,7 +124,8 @@ class Normalizer:
         return out
 
     def short_item(self, name, s, line):
-        """'kg/s[] | 설명 | 선택' → 항목. 첫 칸: 단위 기호 → number / int / text / bool / file:csv,txt / struct:이름 / enum:A/B."""
+        """'kg/s[] | 설명 | 선택' → 항목. 첫 칸: 단위 기호 → number / int / text / bool / file:csv,txt / struct:이름 / enum:A/B (enum:A,B).
+        file:·enum: 뒤는 '/' 와 ',' 로 나눈다 — 선택지 글자에 '/'·',' 가 들면 긴 형식 {type: enum, values: [...]}."""
         d = LDict({"name": name})
         d.line = line
         d.klines = {}
@@ -143,9 +144,9 @@ class Normalizer:
             d["formats"] = LList(re.split(r"[,/]", spec.split(":", 1)[1].strip()))
         elif low.startswith("struct:"):
             d["type"], d["ref"] = "struct", spec.split(":", 1)[1].strip()
-        elif low.startswith("enum:"):
+        elif low.startswith("enum:"):                 # 선택지는 file: 처럼 '/' 와 ',' 둘 다로 나눈다 (enum:A/B · enum:A, B)
             d["type"] = "enum"
-            d["values"] = LList([x.strip() for x in spec.split(":", 1)[1].split("/") if x.strip()])
+            d["values"] = LList([x.strip() for x in re.split(r"[,/]", spec.split(":", 1)[1]) if x.strip()])
         elif spec == "":
             self.rep.err("U01", (self.f, line), f"항목 '{name}' 의 첫 칸(단위·형식)이 비었다",
                          "숫자면 단위(무차원은 1), 글자면 text, 파일이면 file:csv")

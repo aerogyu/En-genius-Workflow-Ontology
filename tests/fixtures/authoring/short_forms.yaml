@@ -36,6 +36,7 @@ interfaces:
       - z: true                                                    # 로더: 첫칸 'true' = 단위 (모르는 단위는 check 의 U02 — 의미)
       - mesh: FILE:cgns / cas.h5 [] | 메시                         # 대소문자 무시 접두 · 조각 앞뒤 공백은 뗀다 · 목록
       - rec: struct:Row
+      - how: enum:1D, CFD/시험 | 방법                             # 선택지는 ',' 와 '/' 둘 다로 나눈다 (file: 처럼)
   - key: if-z
     label: 제트
     version: 1.0.0
