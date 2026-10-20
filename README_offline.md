@@ -7,6 +7,7 @@ W0 판 (2026-10-19). 사내 반입·업데이트 방식은 W4 에서 Tool 온톨
 
 - 인터넷 없이 설치 (Tool 온톨로지가 이미 반입한 파이썬 패키지를 그대로 쓴다 — **새로 반입할 패키지 0**)
 - 저장소의 교과서 예시로 연습: 검사(`check`) → 빌드(`build`, 흐름 그림이 브라우저로 열림) → 계약 동결(`release`) → 데이터 검사(`validate`)
+- 빌드 결과를 Protégé 로 보기 (`workflow_protege.ttl` 한 파일 — 보기 전용, 5-1장)
 - 실제 워크플로 작성: `data\real\workflows\` 에 분야별 YAML (git 에 올라가지 않는 곳)
 - Tool 온톨로지와 잇기: 사내 survey.ttl 로 TOOL ID 후보 CSV (`link_tools`) — 본격 교차는 W5
 - 자기 점검(`selftest`)
@@ -18,6 +19,7 @@ W0 판 (2026-10-19). 사내 반입·업데이트 방식은 W4 에서 Tool 온톨
 | 저장소 zip (GitHub `aerogyu/En-genius-Workflow-Ontology`) | 코드·스키마·설정·예시·이 안내 | 풀어서 폴더 이름을 `engenius-workflow-ontology` 로 |
 | 파이썬 패키지 | Tool 온톨로지의 `offline\wheels\` (또는 `wheels_win_amd64_cp310.zip`) | 이미 사내에 있다 — `requirements.lock` 이 같다 |
 | Java 21 · Fuseki 6.2.0 | SHACL·Fuseki 테스트에만 (선택) | Tool 온톨로지 때 반입한 `C:\EnGenius\tools\` 그대로 |
+| Protégé (5.x) | 빌드 결과 보기 (선택, 보기 전용 — 5-1장) | 사내 반입됨 (2026-10-20). 이 저장소가 설치·실행하지 않는다 |
 
 ## 2. 준비
 
@@ -78,6 +80,23 @@ cmd 에서 직접: `scripts\build.bat <폴더> [survey.ttl …]` · `scripts\rel
 
 예시 폴더 자체는 고치지 않는다 (저장소 파일이다 — 고치지 않은 예시를 그대로 빌드하면 저장소 파일은 바뀌지 않는다).
 
+## 5-1. Protégé 로 보기 (선택, 보기 전용)
+
+build 가 출력 폴더에 **`workflow_protege.ttl`** 을 같이 만든다 — 스키마(클래스·속성 정의) + 작성분 + 계산분 + 외부 어휘(p-plan·prov·dcterms·qudt·skos) 선언을 Turtle 한 파일로 합친 것.
+`workflow.ttl` 만 열면 클래스 정의가 없고 `schema\generated\wfo.owl.ttl` 만 열면 개체가 없어서 합본을 만든다. 빌드 화면의 `Protégé 보기용: workflow_protege.ttl (트리플 …)` 줄이 그 파일이다 (흐름 그림 `workflow.html` 과 같은 폴더).
+
+1. Protégé → **File > Open** → `output\<시각>_<폴더>\workflow_protege.ttl`. 인터넷이 필요 없다 (가져오기 `owl:imports` 없음).
+2. 한국어 이름으로: **View > Render by label (rdfs:label)** — Protégé 판에 따라 메뉴 이름이 조금 다를 수 있다 (View 메뉴의 'Render by …' 중 label).
+   한국어가 안 나오면 File > Preferences > Renderer 에서 언어 `ko` 를 앞에 둔다 (판에 따라 자리가 다를 수 있다).
+3. **Entities** 탭 (없으면 Window > Tabs > Entities): **Classes**(Step·Interface·Loop … 와 p-plan:Step 같은 표준 클래스) · **Individuals**(단계·계약·변수·루프·툴) ·
+   **Object properties**(개체 사이 관계 — p-plan:isPrecededBy = 앞 단계, produces·consumes = 내놓는·받는 계약, tools = 쓰는 툴 …).
+4. 개체(예: 단계) 하나를 누르면 오른쪽 **Property assertions** 에 관계가 나온다 (어느 단계 뒤인지·받고 내놓는 계약·쓰는 툴). key·설명은 Annotations 에 나온다.
+5. **Protégé 에서 고친 것은 YAML 로 돌아가지 않는다 (보기 전용).** 고칠 것은 YAML 에 적고 `build.bat` 을 다시 누른다. build 는 새 출력 폴더에 새 파일을 만든다.
+6. 추론기(Reasoner > HermiT 등)는 돌려도 되지만 **결과를 판정으로 쓰지 않는다** — 판정은 build 검사와 엔지니어.
+
+같은 YAML 이면 같은 파일이 나온다 (빌드 시각 기록을 뺐다). 자세한 읽는 법은 `docs\02_작성안내.md` 7장 'Protégé 로 보기'.
+Protégé 로 실제 연 확인은 사내에서 처음 한다 — 열리지 않거나 관계가 안 보이면 그 증상만(값 없이) 알려 준다 (8장).
+
 ## 6. 실제 워크플로 작성
 
 - `data\real\workflows\` 를 만들고 거기에 `_plan.yaml` + 분야별 `<분야>.yaml`. 이 폴더가 생기면 `check`·`build` 더블클릭의 기본이 된다.
@@ -101,7 +120,7 @@ Java·Fuseki 가 없으면 그 테스트만, Tool 온톨로지 합성 survey.ttl
 ## 8. 무엇을 밖으로 가져올 수 있나
 
 밖(개발 PC)으로는 **값이 없는 것만**: `selftest_<커밋>.txt`, `doctor` 의 `[OK]`/`[NG]` 줄, 검사 보고(화면·`report.txt`) **맨 끝의 `== 코드별 건수 (값 없음 — 밖으로 가져갈 수 있는 줄): …` 한 줄** (예: "오류 U02 3, F01 1 · 경고 R05 2" — 그 위의 메시지 줄은 값을 품으니 손으로 세지 말고 이 줄만), `[NG] 설정 오류: <파일> <키>` 한 줄, 파이썬 traceback 의 마지막 몇 줄.
-메시지 문구·key·툴명·계약 항목·경로·인명·흐름 그림·후보 CSV 는 옮기지 않는다 (사내 내용이 들어 있다).
+메시지 문구·key·툴명·계약 항목·경로·인명·흐름 그림·후보 CSV·`workflow_protege.ttl`·Protégé 화면은 옮기지 않는다 (사내 내용이 들어 있다).
 
 ## 9. 자주 걸리는 것
 

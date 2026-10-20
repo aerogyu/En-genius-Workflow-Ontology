@@ -5,6 +5,7 @@ rem   Drag a YAML folder (or one of its .yaml files) onto this file -> that fold
 rem   Drag the folder together with a Tool ontology survey.ttl     -> also checks the TOOL IDs (X codes)
 rem   scripts\build.bat <yaml folder> [catalog.ttl ...]
 rem Output: output\<time>_<folder name>\ ; workflow.html opens in the browser after a good build (WF_NO_OPEN=1 turns that off).
+rem   workflow_protege.ttl in the same folder = one file for Protege (File > Open; view only - edits do not go back to YAML).
 rem Any error -> no output files, rc 1. Messages are Korean (printed by Python); the code list is in docs\02 (writing guide).
 rem This .bat is ASCII-only on purpose: cmd reads .bat files as cp949 on Korean Windows.
 setlocal

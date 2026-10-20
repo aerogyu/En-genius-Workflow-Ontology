@@ -24,7 +24,7 @@ from pathlib import Path
 from engenius_wf import __version__
 
 COMMANDS = {
-    "build": "검사 + 생성 전부 (TTL 2그래프·trig·계약 JSON Schema·골격·흐름 그림 HTML·report.txt·canonical.json)",
+    "build": "검사 + 생성 전부 (TTL 2그래프·trig·Protégé 보기용 합본·계약 JSON Schema·골격·흐름 그림 HTML·report.txt·canonical.json)",
     "check": "검사만 (결과 파일 없음 — 작성 중에 자주)",
     "release": "계약의 확정 판 동결 (_released/<계약>/<판>.json — 일자·사유, 인명 없음)",
     "validate": "실제 데이터(JSON)가 계약을 지키는지 검사",
@@ -77,6 +77,9 @@ def cmd_build(a: argparse.Namespace) -> int:
         m = ctx["m"]
         print(f"TTL: 작성 {len(ctx['A'])} + 파생 {len(ctx['D'])} 트리플 · 단계 {len(m['step'])} · 계약 {len(m['interface'])} "
               f"(JSON Schema {ctx['n_schema']}) · 루프 {len(m['loop'])} → {out}")
+        n = ctx["protege"]
+        print(f"Protégé 보기용: workflow_protege.ttl (트리플 {n['total']} = 스키마 {n['schema']} + 작성 {n['authored']} + "
+              f"파생 {n['derived']} + 머리 {n['header']} + 외부 어휘 선언 {n['declared']}) — 보기 전용, 고쳐도 YAML 로 돌아가지 않는다")
     return 0 if ctx else 1
 
 
