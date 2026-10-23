@@ -39,7 +39,7 @@
 
 ## 형제 저장소(Tool 온톨로지)와의 관계
 
-- 위치 `C:\EnGenius\engenius-tool-ontology` (GitHub `aerogyu/En-genius-Ontology`). **이 저장소 작업 중에는 그쪽을 고치지 않는다.** 그쪽 변경(4술어 유지 테스트 등)은 Leo 결정 뒤 그 저장소 세션에서.
+- 위치 `C:\EnGenius\engenius-tool-ontology` (GitHub `aerogyu/En-genius-Tool-Ontology`). **이 저장소 작업 중에는 그쪽을 고치지 않는다.** 그쪽 변경(4술어 유지 테스트 등)은 Leo 결정 뒤 그 저장소 세션에서.
   합성 survey.ttl(`output/20260930T230632/survey.ttl`, git 제외)은 교차 테스트가 **읽기만** 한다 (`WF_SURVEY_TTL` 로 바꿀 수 있음, 없으면 skip).
 - 툴은 **TOOL ID 로 참조**: `_plan.yaml` 의 tools 표 한 곳에만 `tool_id`(+ `label_at_link` 스냅샷)를 사람이 적는다 (`link-tools` 후보 CSV 를 보고). 단계는 툴 key 로만 부른다.
 - **4술어 연결 계약** — 이 저장소가 Tool 온톨로지에서 읽는 것: `eg:Tool` · `skos:prefLabel/altLabel` · `eg:status` · `eg:merged_into` (`src/engenius_wf/tools.py` LINK_PREDICATES).
